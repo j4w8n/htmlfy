@@ -5,5 +5,6 @@ export const CONFIG = {
   ignore: [],
   strict: false,
   tab_size: 2,
-  trim: []
+  trim: [],
+  protection_string: '',
 }
