@@ -3,7 +3,7 @@ import { CONFIG } from '../src/constants.js'
 import { entify } from '../src/entify.js'
 import { minify } from '../src/minify.js'
 import { prettify } from '../src/prettify.js'
-import { trimify } from '../src/utils.js'
+import { isHtml, trimify } from '../src/utils.js'
 import { expect, test } from 'vitest'
 
 
@@ -224,6 +224,14 @@ const empty_attributes_fixed = `<main>
 const testConfig = async (config) => {
   return await prettify(config_html, config)
 }
+
+test('isHtml', () => {
+  expect(isHtml('<custom-element></custom-element>')).toBe(true)
+})
+
+test('isNotValidElement', () => {
+  expect(isHtml('<-custom-element></-custom-element>')).toBe(false)
+})
 
 test('Trimify', () => {
   expect(trimify(trim_leading_whitespace, ['div'])).toBe('<div>Hello</div>')
