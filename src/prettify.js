@@ -1,6 +1,6 @@
 import { closify } from './closify.js'
 import { minify } from './minify.js'
-import { isHtml, protectAttributes, setIgnoreElement, trimify, unprotectAttributes, unsetIgnoreElement, validateConfig } from './utils.js'
+import { isHtml, protectAttributes, setIgnoreAttribute, setIgnoreElement, trimify, unprotectAttributes, unsetIgnoreAttribute, unsetIgnoreElement, validateConfig } from './utils.js'
 import { CONFIG, VOID_ELEMENTS } from './constants.js'
 
 /**
@@ -203,8 +203,14 @@ export const prettify = (html, config) => {
   /* Preserve ignored elements. */
   if (ignore) html = setIgnoreElement(html, validated_config)
 
+  /* Preserve html text within attribute values. */
+  html = setIgnoreAttribute(html)
+
   html = preprocess(html)
   html = process(html, validated_config)
+
+  /* Revert html text within attribute values. */
+  html = unsetIgnoreAttribute(html)
 
   /* Revert ignored elements. */
   if (ignore) html = unsetIgnoreElement(html, validated_config)

@@ -89,6 +89,26 @@ export const protectAttributes = (html) => {
 }
 
 /**
+ * Replace html brackets with ignore string.
+ * 
+ * @param {string} html 
+ * @returns {string}
+ */
+export const setIgnoreAttribute = (html) => {
+  const regex = /<([A-Za-z]+[A-Za-z0-9]*|[a-z][a-z0-9._]*-[a-z0-9._-]+)(\s+.*)\B>(?:.|\n)*/g
+
+  html = html.replace(regex, (/** @type {string} */match, p1, p2) => {
+    return match.replace(p2, (match) => {
+      return match
+        .replace(/</g, ATTRIBUTE_IGNORE_STRING + 'lt!')
+        .replace(/>/g, ATTRIBUTE_IGNORE_STRING + 'gt!')
+    })
+  })
+  
+  return html
+}
+
+/**
  * Replace entities with ignore string.
  * 
  * @param {string} html 
@@ -152,6 +172,26 @@ export const unprotectAttributes = (html) => {
     })
   })
 
+  return html
+}
+
+/**
+ * Replace ignore string with html brackets.
+ * 
+ * @param {string} html 
+ * @returns {string}
+ */
+export const unsetIgnoreAttribute = (html) => {
+  const regex = /<(?<Element>([A-Za-z]+[A-Za-z0-9]*|[a-z][a-z0-9._]*-[a-z0-9._-]+))(\s+.*)\B>(?:.|\n)*<\/{1}\k<Element>>/g
+
+  html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
+    return match.replace(capture, (match) => {
+      return match
+        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'lt!', "g"), '<')
+        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'gt!', "g"), '>')
+    })
+  })
+  
   return html
 }
 
