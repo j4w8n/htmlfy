@@ -354,7 +354,7 @@ test('Crazy attribute with html text for value', () => {
 })
 
 test('Crazy attribute with html text for value with tag wrap', () => {
-  expect(prettify(attribute_with_html_crazy_name_tag_wrap)).toBe(attribute_with_html_crazy_name_pretty_tag_wrap)
+  expect(prettify(attribute_with_html_crazy_name_tag_wrap, { tag_wrap: true })).toBe(attribute_with_html_crazy_name_pretty_tag_wrap)
 })
 
 test('Minify', () => {
