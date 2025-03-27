@@ -160,7 +160,7 @@ const process = (html, config) => {
 
   /* Remove line returns, tabs, and consecutive spaces within html elements or their content. */
   html = html.replace(
-    />[^<]*?[^><\/\s][^<]*?<\/|>\s+[^><\s]|<script[^>]*>\s+<\/script>|<(\w+)>\s+<\/(\w+)|<(?:([\w:\-]+)|([\w:\-]+)[^>]*[^\/])>\s+<\/([\w:\-]+)>/g,
+    />[^<]*?[^><\/\s][^<]*?<\/|>\s+[^><\s]|<script[^>]*>\s+<\/script>|<(\w+)>\s+<\/(\w+)|<(?:([\w:\._-]+)|([\w:\._-]+)[^>]*[^\/])>\s+<\/([\w:\._-]+)>/g,
     match => match.replace(/\n|\t|\s{2,}/g, '')
   )
 
