@@ -182,9 +182,7 @@ export const unprotectAttributes = (html) => {
  * @returns {string}
  */
 export const unsetIgnoreAttribute = (html) => {
-  const regex = /<(?<Element>([A-Za-z]+[A-Za-z0-9]*|[a-z][a-z0-9._]*-[a-z0-9._-]+))(\s+.*)\B>(?:.|\n)*<\/{1}\k<Element>>/g
-
-  html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
+  html = html.replace(/<[\w:\-]+([^>]*)>/g, (/** @type {string} */match, /** @type {any} */capture) => {
     return match.replace(capture, (match) => {
       return match
         .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'lt!', "g"), '<')

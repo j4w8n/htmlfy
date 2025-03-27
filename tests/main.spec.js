@@ -337,7 +337,7 @@ test('Tag wrapped attribute with html text for value', () => {
 })
 
 test('Void attribute with html text for value', () => {
-  expect(prettify(void_attribute_with_hyphen)).toBe(void_attribute_with_hyphen)
+  expect(prettify(void_attribute_with_hyphen, { strict: true })).toBe(void_attribute_with_hyphen)
 })
 
 test('Minify', () => {
