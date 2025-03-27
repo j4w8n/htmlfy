@@ -20,6 +20,7 @@ title="We need your email for verification." name="email" required><!--    This 
 <label for="fruits-1-1">Grapes</label><br></fieldset>
 <br><name:test></name:test>
 <link:test><div>Hello There</div></link:test>
+<custom-element class="hello there world" style="margin-top: 12px; margin-left: 12px;"><div>Goodbye World</div></custom-element>
 </form>`
 
 const entify_html = `<textarea  >
@@ -54,6 +55,9 @@ const pretty_html = `<form id="3">
   <link:test>
     <div>Hello There</div>
   </link:test>
+  <custom-element class="hello there world" style="margin-top: 12px; margin-left: 12px;">
+    <div>Goodbye World</div>
+  </custom-element>
 </form>`
 
 const pretty_strict_html = `<form id="3">
@@ -74,6 +78,9 @@ const pretty_strict_html = `<form id="3">
   <link:test>
     <div>Hello There</div>
   </link:test>
+  <custom-element class="hello there world" style="margin-top: 12px; margin-left: 12px;">
+    <div>Goodbye World</div>
+  </custom-element>
 </form>`
 
 const pretty_wrapped_html = `<form id="3">
@@ -105,6 +112,12 @@ const pretty_wrapped_html = `<form id="3">
   <link:test>
     <div>Hello There</div>
   </link:test>
+  <custom-element
+    class="hello there world"
+    style="margin-top: 12px; margin-left: 12px;"
+  >
+    <div>Goodbye World</div>
+  </custom-element>
 </form>`
 
 const pretty_wrapped_tab4_html = `<form id="3">
@@ -136,6 +149,12 @@ const pretty_wrapped_tab4_html = `<form id="3">
     <link:test>
         <div>Hello There</div>
     </link:test>
+    <custom-element
+        class="hello there world"
+        style="margin-top: 12px; margin-left: 12px;"
+    >
+        <div>Goodbye World</div>
+    </custom-element>
 </form>`
 
 const pretty_wrapped_strict_html = `<form id="3">
@@ -162,6 +181,12 @@ const pretty_wrapped_strict_html = `<form id="3">
   <link:test>
     <div>Hello There</div>
   </link:test>
+  <custom-element
+    class="hello there world"
+    style="margin-top: 12px; margin-left: 12px;"
+  >
+    <div>Goodbye World</div>
+  </custom-element>
 </form>`
 
 const closify_html = `<form id="3">
@@ -220,6 +245,24 @@ const empty_attributes_fixed = `<main>
   <div data-name="" data-1=''></div>
 </main>`
 
+const standalone_tag_wrap = '<mg-batman boolean text="hello" object="Property must be set through a script or a framework-specific syntax." array="Property must be set through a script or a framework-specific syntax." function="Property must be set through a script or a framework-specific syntax."></mg-batman>'
+const standalone_pretty_tag_wrap = `<mg-batman
+  boolean
+  text="hello"
+  object="Property must be set through a script or a framework-specific syntax."
+  array="Property must be set through a script or a framework-specific syntax."
+  function="Property must be set through a script or a framework-specific syntax."
+></mg-batman>`
+
+const standalone_input_wrap = '<input class="hello there world" id="fruits-1-0" type="checkbox" name="fruits" value="apples">'
+const standalone_pretty_input_wrap = `<input
+  class="hello there world"
+  id="fruits-1-0"
+  type="checkbox"
+  name="fruits"
+  value="apples"
+>`
+
 // @ts-ignore
 const testConfig = async (config) => {
   // await is required for this test
@@ -263,9 +306,17 @@ test('Prettify with empty attributes', () => {
   expect(prettify(empty_attributes_spaces)).toBe(empty_attributes_fixed)
 })
 
+test('Standalone tag wrap', () => {
+  expect(prettify(standalone_tag_wrap, { tag_wrap: true })).toBe(standalone_pretty_tag_wrap)
+})
+
+test('Standalone input wrap', () => {
+  expect(prettify(standalone_input_wrap, { tag_wrap: true })).toBe(standalone_pretty_input_wrap)
+})
+
 test('Minify', () => {
   expect(minify(pretty_html)).toBe(
-    `<form id="3"><!-- This is a comment. --><!-- This is a second comment. --><label for="email-0">What's your email?</label><input id="email-0" type="email" title="We need your email for verification." name="email" required /><!-- This is another comment. --><label for="1">What fruits do you like?</label><fieldset id="1"><input id="fruits-1-0" type="checkbox" name="fruits" value="apples" /><label for="fruits-1-0">Apples</label><br /><div><!-- This is an embedded comment. --></div><input id="fruits-1-1" type="checkbox" name="fruits" value="grapes" /><label for="fruits-1-1">Grapes</label><br /></fieldset><br /><name:test></name:test><link:test><div>Hello There</div></link:test></form>`
+    `<form id="3"><!-- This is a comment. --><!-- This is a second comment. --><label for="email-0">What's your email?</label><input id="email-0" type="email" title="We need your email for verification." name="email" required /><!-- This is another comment. --><label for="1">What fruits do you like?</label><fieldset id="1"><input id="fruits-1-0" type="checkbox" name="fruits" value="apples" /><label for="fruits-1-0">Apples</label><br /><div><!-- This is an embedded comment. --></div><input id="fruits-1-1" type="checkbox" name="fruits" value="grapes" /><label for="fruits-1-1">Grapes</label><br /></fieldset><br /><name:test></name:test><link:test><div>Hello There</div></link:test><custom-element class="hello there world" style="margin-top: 12px; margin-left: 12px;"><div>Goodbye World</div></custom-element></form>`
   )
 })
 
