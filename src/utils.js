@@ -1,4 +1,4 @@
-import { CONFIG } from './constants.js'
+import { ATTRIBUTE_IGNORE_STRING, CONFIG } from './constants.js'
 
 /**
  * Checks if content contains at least one HTML element or custom HTML element.
@@ -71,6 +71,23 @@ export const mergeConfig = (dconfig, config) => {
 }
 
 /**
+ * 
+ * @param {string} html 
+ */
+export const protectAttributes = (html) => {
+  html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
+    return match.replace(capture, (match) => {
+      return match
+        .replace(/\n/g, ATTRIBUTE_IGNORE_STRING + 'nl!')
+        .replace(/\r/g, ATTRIBUTE_IGNORE_STRING + 'cr!')
+        .replace(/\s/g, ATTRIBUTE_IGNORE_STRING + 'ws!')
+    })
+  })
+
+  return html
+}
+
+/**
  * Replace entities with ignore string.
  * 
  * @param {string} html 
@@ -116,6 +133,23 @@ export const trimify = (html, trim) => {
       .replace(leading_whitespace, '$1')
       .replace(trailing_whitespace, '$1')
   }
+
+  return html
+}
+
+/**
+ * 
+ * @param {string} html 
+ */
+export const unprotectAttributes = (html) => {
+  html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
+    return match.replace(capture, (match) => {
+      return match
+        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'nl!', "g"), '\n')
+        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'cr!', "g"), '\r')
+        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'ws!', "g"), ' ')
+    })
+  })
 
   return html
 }

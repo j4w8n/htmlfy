@@ -1,6 +1,6 @@
 import { closify } from './closify.js'
 import { minify } from './minify.js'
-import { isHtml, setIgnoreElement, trimify, unsetIgnoreElement, validateConfig } from './utils.js'
+import { isHtml, protectAttributes, setIgnoreElement, trimify, unprotectAttributes, unsetIgnoreElement, validateConfig } from './utils.js'
 import { CONFIG } from './constants.js'
 
 /**
@@ -146,11 +146,17 @@ const process = (html, config) => {
       })
   })
 
+  /* Preserve wrapped attributes. */
+  if (wrap) html = protectAttributes(html)
+
   /* Remove line returns, tabs, and consecutive spaces within html elements or their content. */
   html = html.replace(
     />[^<]*?[^><\/\s][^<]*?<\/|>\s+[^><\s]|<script[^>]*>\s+<\/script>|<(\w+)>\s+<\/(\w+)|<(?:([\w:\-]+)|([\w:\-]+)[^>]*[^\/])>\s+<\/([\w:\-]+)>/g,
     match => match.replace(/\n|\t|\s{2,}/g, '')
   )
+
+  /* Revert wrapped attributes. */
+  if (wrap) html = unprotectAttributes(html)
 
   /* Remove self-closing nature of void elements. */
   if (strict) html = html.replace(/\s\/>|\/>/g, '>')

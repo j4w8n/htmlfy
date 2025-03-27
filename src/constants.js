@@ -10,3 +10,5 @@ export const CONFIG = {
   tag_wrap_width: 80,
   trim: []
 }
+
+export const ATTRIBUTE_IGNORE_STRING = '!i-£___£%_'
