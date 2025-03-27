@@ -1,12 +1,26 @@
 import { CONFIG } from './constants.js'
 
 /**
- * Checks if content contains at least one HTML element.
+ * Checks if content contains at least one HTML element or custom HTML element.
+ * 
+ * HTML elements should begin with a letter, and can end with a letter or number.
+ * 
+ * Custom elements must begin with a letter, and can end with a letter, number,
+ * hyphen, underscore, or period. However, all letters must be lowercase.
+ * They must have at least one hyphen, and can only have periods and underscores if there is a hyphen.
+ * 
+ * These regexes are based on
+ * https://w3c.github.io/html-reference/syntax.html#tag-name
+ * and
+ * https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name
+ * respectively.
  * 
  * @param {string} content Content to evaluate.
  * @returns {boolean} A boolean.
  */
-export const isHtml = (content) => /<(?<Element>[A-Za-z]+\b)[^>]*(?:.|\n)*?<\/{1}\k<Element>>/.test(content)
+export const isHtml = (content) => 
+  /<(?<Element>(?:[A-Za-z]+[A-Za-z0-9]*))(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content) || 
+  /<(?<Element>[a-z][a-z0-9._]*-[a-z0-9._-]+)(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content)
 
 /**
  * Generic utility which merges two objects.
