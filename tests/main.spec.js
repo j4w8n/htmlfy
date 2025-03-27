@@ -263,6 +263,15 @@ const standalone_pretty_input_wrap = `<input
   value="apples"
  />`
 
+const attribute_with_html_crazy_name = '<cus---t0m...element___ boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>."></cus---t0m...element___>'
+const attribute_with_html_crazy_name_tag_wrap = '<cus---t0m...element___ boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>."></cus---t0m...element___>'
+const attribute_with_html_crazy_name_pretty_tag_wrap = `<cus---t0m...element___
+  boolean
+  text="hello"
+  blu="blu bli bla blo"
+  number="42"
+  html-content="Help text with html <b>bold</b>, <em>italic</em>."
+></cus---t0m...element___>`
 const void_attribute_with_hyphen = '<input boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>.">'
 const attribute_with_hyphen = '<mg-blublu boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>."><div>Hello there world</div></mg-blublu>'
 const attribute_with_hyphen_pretty = `<mg-blublu boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>.">
@@ -338,6 +347,14 @@ test('Tag wrapped attribute with html text for value', () => {
 
 test('Void attribute with html text for value', () => {
   expect(prettify(void_attribute_with_hyphen, { strict: true })).toBe(void_attribute_with_hyphen)
+})
+
+test('Crazy attribute with html text for value', () => {
+  expect(prettify(attribute_with_html_crazy_name)).toBe(attribute_with_html_crazy_name)
+})
+
+test('Crazy attribute with html text for value with tag wrap', () => {
+  expect(prettify(attribute_with_html_crazy_name_tag_wrap)).toBe(attribute_with_html_crazy_name_pretty_tag_wrap)
 })
 
 test('Minify', () => {
