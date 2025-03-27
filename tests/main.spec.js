@@ -263,6 +263,19 @@ const standalone_pretty_input_wrap = `<input
   value="apples"
  />`
 
+const attribute_with_hyphen = '<mg-blublu boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>."><div>Hello there world</div></mg-blublu>'
+const attribute_with_hyphen_pretty = `<mg-blublu boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>.">
+  <div>Hello there world</div>
+</mg-blublu>`
+const attribute_with_hyphen_tag_wrap = '<mg-blublu boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>."></mg-blublu>'
+const attribute_with_hyphen_pretty_tag_wrap = `<mg-blublu
+  boolean
+  text="hello"
+  blu="blu bli bla blo"
+  number="42"
+  html-content="Help text with html <b>bold</b>, <em>italic</em>."
+></mg-blublu>`
+
 // @ts-ignore
 const testConfig = async (config) => {
   // await is required for this test
@@ -312,6 +325,14 @@ test('Standalone tag wrap', () => {
 
 test('Standalone input wrap', () => {
   expect(prettify(standalone_input_wrap, { tag_wrap: true })).toBe(standalone_pretty_input_wrap)
+})
+
+test('Attribute with html text for value', () => {
+  expect(prettify(attribute_with_hyphen)).toBe(attribute_with_hyphen_pretty)
+})
+
+test('Tag wrapped attribute with html text for value', () => {
+  expect(prettify(attribute_with_hyphen_tag_wrap, { tag_wrap: true })).toBe(attribute_with_hyphen_pretty_tag_wrap)
 })
 
 test('Minify', () => {
