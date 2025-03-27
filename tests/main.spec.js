@@ -263,6 +263,7 @@ const standalone_pretty_input_wrap = `<input
   value="apples"
  />`
 
+const void_attribute_with_hyphen = '<input boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>.">'
 const attribute_with_hyphen = '<mg-blublu boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>."><div>Hello there world</div></mg-blublu>'
 const attribute_with_hyphen_pretty = `<mg-blublu boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>.">
   <div>Hello there world</div>
@@ -333,6 +334,10 @@ test('Attribute with html text for value', () => {
 
 test('Tag wrapped attribute with html text for value', () => {
   expect(prettify(attribute_with_hyphen_tag_wrap, { tag_wrap: true })).toBe(attribute_with_hyphen_pretty_tag_wrap)
+})
+
+test('Void attribute with html text for value', () => {
+  expect(prettify(void_attribute_with_hyphen)).toBe(void_attribute_with_hyphen)
 })
 
 test('Minify', () => {
