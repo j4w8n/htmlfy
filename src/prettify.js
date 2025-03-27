@@ -1,7 +1,7 @@
 import { closify } from './closify.js'
 import { minify } from './minify.js'
 import { isHtml, protectAttributes, setIgnoreElement, trimify, unprotectAttributes, unsetIgnoreElement, validateConfig } from './utils.js'
-import { CONFIG } from './constants.js'
+import { CONFIG, VOID_ELEMENTS } from './constants.js'
 
 /**
  * @type {boolean}
@@ -135,7 +135,16 @@ const process = (html, config) => {
             const a_string = a[0].trim().padStart(a[0].trim().length + inner_padding) + `\n`
             wrapped += a_string
           }
-          const e_string = tag_parts[1].padStart(tag_parts[1].trim().length + padding + (strict ? 1 : 0))
+
+          /**
+           * Regarding the ending check: only pad an additional space 
+           * if strict is true and the tag we're processing is a void element. 
+           */
+          const e_string = tag_parts[1].padStart(
+            tag_parts[1].trim().length + 
+            padding + 
+            (strict && VOID_ELEMENTS.includes(tag_parts[0].slice(1)) ? 1 : 0)
+          )
           wrapped += e_string
 
           return wrapped

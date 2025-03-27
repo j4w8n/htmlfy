@@ -12,3 +12,9 @@ export const CONFIG = {
 }
 
 export const ATTRIBUTE_IGNORE_STRING = '!i-£___£%_'
+
+export const VOID_ELEMENTS = [
+  'area', 'base', 'br', 'col', 'embed', 'hr', 
+  'img', 'input', 'link', 'meta',
+  'param', 'source', 'track', 'wbr'
+]
