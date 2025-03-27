@@ -19,6 +19,7 @@ import { ATTRIBUTE_IGNORE_STRING, CONFIG } from './constants.js'
  * @returns {boolean} A boolean.
  */
 export const isHtml = (content) => 
+  /<(?:[A-Za-z]+[A-Za-z0-9]*)(?:\s+.*?)*?>/.test(content) ||
   /<(?<Element>(?:[A-Za-z]+[A-Za-z0-9]*))(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content) || 
   /<(?<Element>[a-z][a-z0-9._]*-[a-z0-9._-]+)(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content)
 

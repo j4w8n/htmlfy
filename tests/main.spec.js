@@ -261,7 +261,7 @@ const standalone_pretty_input_wrap = `<input
   type="checkbox"
   name="fruits"
   value="apples"
->`
+ />`
 
 // @ts-ignore
 const testConfig = async (config) => {
