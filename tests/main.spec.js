@@ -286,6 +286,36 @@ const attribute_with_hyphen_pretty_tag_wrap = `<mg-blublu
   html-content="Help text with html <b>bold</b>, <em>italic</em>."
 ></mg-blublu>`
 
+const regular_elements_with_simple_nesting = '<div identifier="identifier" message="This is a tooltip message"><icon icon="info-circle"></icon></div>'
+const regular_elements_pretty_with_simple_nesting = `<div identifier="identifier" message="This is a tooltip message">
+  <icon icon="info-circle"></icon>
+</div>`
+const regular_elements_with_nesting = '<article items="⚠️ Property must be set through a script or a framework-specific syntax." identifier="identifier" name="input-name" label="Label" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>."><div><span slot="item-1">non</span><span slot="item-2">oui</span></div><h1>Hello</h1></article>'
+const regular_elements_pretty_with_nesting = `<article items="⚠️ Property must be set through a script or a framework-specific syntax." identifier="identifier" name="input-name" label="Label" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>.">
+  <div>
+    <span slot="item-1">non</span>
+    <span slot="item-2">oui</span>
+  </div>
+  <h1>Hello</h1>
+</article>`
+
+const custom_elements_with_simple_nesting = '<mg-tooltip identifier="identifier" message="This is a tooltip message"><mg-icon icon="info-circle"></mg-icon></mg-tooltip>'
+const custom_elements_pretty_with_simple_nesting = `<mg-tooltip identifier="identifier" message="This is a tooltip message">
+  <mg-icon icon="info-circle"></mg-icon>
+</mg-tooltip>`
+const custom_elements_with_nesting = '<mg-input-toggle items="⚠️ Property must be set through a script or a framework-specific syntax." identifier="identifier" name="input-name" label="Label" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>."><div><span slot="item-1">non</span><span slot="item-2">oui</span></div><nested-custom>Hello</nested-custom></mg-input-toggle>'
+const custom_elements_pretty_with_nesting = `<mg-input-toggle items="⚠️ Property must be set through a script or a framework-specific syntax." identifier="identifier" name="input-name" label="Label" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>.">
+  <div>
+    <span slot="item-1">
+      non
+    </span>
+    <span slot="item-2">
+      oui
+    </span>
+  </div>
+  <nested-custom>Hello</nested-custom>
+</mg-input-toggle>`
+
 // @ts-ignore
 const testConfig = async (config) => {
   // await is required for this test
@@ -355,6 +385,22 @@ test('Crazy attribute with html text for value', () => {
 
 test('Crazy attribute with html text for value with tag wrap', () => {
   expect(prettify(attribute_with_html_crazy_name_tag_wrap, { tag_wrap: true })).toBe(attribute_with_html_crazy_name_pretty_tag_wrap)
+})
+
+test('Regular elements with simple nesting', () => {
+  expect(prettify(regular_elements_with_simple_nesting)).toBe(regular_elements_pretty_with_simple_nesting)
+})
+
+test('Regular elements with nesting', () => {
+  expect(prettify(regular_elements_with_nesting)).toBe(regular_elements_pretty_with_nesting)
+})
+
+test('Custom elements with simple nesting', () => {
+  expect(prettify(custom_elements_with_simple_nesting)).toBe(custom_elements_pretty_with_simple_nesting)
+})
+
+test('Custom elements with nesting', () => {
+  expect(prettify(custom_elements_with_nesting)).toBe(custom_elements_pretty_with_nesting)
 })
 
 test('Minify', () => {
