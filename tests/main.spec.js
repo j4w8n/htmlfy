@@ -311,6 +311,21 @@ const custom_elements_pretty_with_nesting = `<mg-input-toggle items="⚠️ Prop
   </div>
   <nested-custom>Hello</nested-custom>
 </mg-input-toggle>`
+const custom_elements_with_nesting_tag_wrap = '<mg-input-toggle items="⚠️ Property must be set through a script or a framework-specific syntax." identifier="identifier" name="input-name" label="Label" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>."><div>Let the spans fly.<span slot="item-1">non</span><span slot="item-2">oui</span></div><nested-custom>Hello</nested-custom></mg-input-toggle>'
+const custom_elements_pretty_with_nesting_tag_wrap = `<mg-input-toggle
+  items="⚠️ Property must be set through a script or a framework-specific syntax."
+  identifier="identifier"
+  name="input-name"
+  label="Label"
+  tooltip="This is a tooltip"
+  help-text="Help text with html <b>bold</b>, <em>italic</em>."
+>
+  <div>Let the spans fly.
+    <span slot="item-1">non</span>
+    <span slot="item-2">oui</span>
+  </div>
+  <nested-custom>Hello</nested-custom>
+</mg-input-toggle>`
 
 // @ts-ignore
 const testConfig = async (config) => {
@@ -397,6 +412,10 @@ test('Custom elements with simple nesting', () => {
 
 test('Custom elements with nesting', () => {
   expect(prettify(custom_elements_with_nesting)).toBe(custom_elements_pretty_with_nesting)
+})
+
+test('Custom elements with nesting and tag wrap', () => {
+  expect(prettify(custom_elements_with_nesting_tag_wrap, { tag_wrap: true })).toBe(custom_elements_pretty_with_nesting_tag_wrap)
 })
 
 test('Minify', () => {
