@@ -95,7 +95,7 @@ export const protectAttributes = (html) => {
  * @returns {string}
  */
 export const setIgnoreAttribute = (html) => {
-  const regex = /<([A-Za-z][A-Za-z0-9]*|[a-z][a-z0-9._]*-[a-z0-9._-]+)(\s*[a-z]*(?:\s+[A-Za-z0-9_-]+="[^"]*")*\s*[a-z]*)>/g
+  const regex = /<([A-Za-z][A-Za-z0-9]*|[a-z][a-z0-9._]*-[a-z0-9._-]+)((?:\s+[A-Za-z0-9_-]+="[^"]*"|\s*[a-z]*)*)>/g
 
   html = html.replace(regex, (/** @type {string} */match, p1, p2) => {
     return match.replace(p2, (match) => {
