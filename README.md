@@ -6,6 +6,7 @@ HTML formatter yo! Prettify, minify and more!
 - Fully typed.
 - Converted to ESM.
 - Added configuration options.
+- Added support for custom HTML elements (web components)
 - Lots of refactoring.
 - Improved some of the processing logic.
 
