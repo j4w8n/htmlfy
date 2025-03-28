@@ -303,15 +303,11 @@ const custom_elements_with_simple_nesting = '<mg-tooltip identifier="identifier"
 const custom_elements_pretty_with_simple_nesting = `<mg-tooltip identifier="identifier" message="This is a tooltip message">
   <mg-icon icon="info-circle"></mg-icon>
 </mg-tooltip>`
-const custom_elements_with_nesting = '<mg-input-toggle items="⚠️ Property must be set through a script or a framework-specific syntax." identifier="identifier" name="input-name" label="Label" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>."><div><span slot="item-1">non</span><span slot="item-2">oui</span></div><nested-custom>Hello</nested-custom></mg-input-toggle>'
+const custom_elements_with_nesting = '<mg-input-toggle items="⚠️ Property must be set through a script or a framework-specific syntax." identifier="identifier" name="input-name" label="Label" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>."><div>Let the spans fly.<span slot="item-1">non</span><span slot="item-2">oui</span></div><nested-custom>Hello</nested-custom></mg-input-toggle>'
 const custom_elements_pretty_with_nesting = `<mg-input-toggle items="⚠️ Property must be set through a script or a framework-specific syntax." identifier="identifier" name="input-name" label="Label" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>.">
-  <div>
-    <span slot="item-1">
-      non
-    </span>
-    <span slot="item-2">
-      oui
-    </span>
+  <div>Let the spans fly.
+    <span slot="item-1">non</span>
+    <span slot="item-2">oui</span>
   </div>
   <nested-custom>Hello</nested-custom>
 </mg-input-toggle>`
