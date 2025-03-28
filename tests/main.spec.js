@@ -327,6 +327,32 @@ const custom_elements_pretty_with_nesting_tag_wrap = `<mg-input-toggle
   <nested-custom>Hello</nested-custom>
 </mg-input-toggle>`
 
+const elements_with_multiple_standalone_attributes_and_html = '<mg-input-toggle boolean items="⚠️ Property must be set through a script or a framework-specific syntax." identifier="identifier" selected name="input-name" label="Label" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>." required><div>Let the spans fly.<span slot="item-1">non</span><span slot="item-2">oui</span></div><nested-custom>Hello</nested-custom></mg-input-toggle>'
+const elements_pretty_with_multiple_standalone_attributes_and_html = `<mg-input-toggle boolean items="⚠️ Property must be set through a script or a framework-specific syntax." identifier="identifier" selected name="input-name" label="Label" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>." required>
+  <div>Let the spans fly.
+    <span slot="item-1">non</span>
+    <span slot="item-2">oui</span>
+  </div>
+  <nested-custom>Hello</nested-custom>
+</mg-input-toggle>`
+const elements_pretty_with_multiple_standalone_attributes_and_html_tag_wrap = `<mg-input-toggle
+  boolean
+  items="⚠️ Property must be set through a script or a framework-specific syntax."
+  identifier="identifier"
+  selected
+  name="input-name"
+  label="Label"
+  tooltip="This is a tooltip"
+  help-text="Help text with html <b>bold</b>, <em>italic</em>."
+  required
+>
+  <div>Let the spans fly.
+    <span slot="item-1">non</span>
+    <span slot="item-2">oui</span>
+  </div>
+  <nested-custom>Hello</nested-custom>
+</mg-input-toggle>`
+
 // @ts-ignore
 const testConfig = async (config) => {
   // await is required for this test
@@ -416,6 +442,14 @@ test('Custom elements with nesting', () => {
 
 test('Custom elements with nesting and tag wrap', () => {
   expect(prettify(custom_elements_with_nesting_tag_wrap, { tag_wrap: true })).toBe(custom_elements_pretty_with_nesting_tag_wrap)
+})
+
+test('Elements with multiple standalone attributes', () => {
+  expect(prettify(elements_with_multiple_standalone_attributes_and_html)).toBe(elements_pretty_with_multiple_standalone_attributes_and_html)
+})
+
+test('Elements with multiple standalone attributes and tag wrap', () => {
+  expect(prettify(elements_with_multiple_standalone_attributes_and_html, { tag_wrap: true })).toBe(elements_pretty_with_multiple_standalone_attributes_and_html_tag_wrap)
 })
 
 test('Minify', () => {
