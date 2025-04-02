@@ -3,7 +3,7 @@ import { CONFIG } from '../src/constants.js'
 import { entify } from '../src/entify.js'
 import { minify } from '../src/minify.js'
 import { prettify } from '../src/prettify.js'
-import { trimify } from '../src/utils.js'
+import { isHtml, trimify } from '../src/utils.js'
 import { expect, test } from 'vitest'
 
 
@@ -418,11 +418,42 @@ const pretty_custom_heavy_plaintext = `<name:test>
   Y'all 
 </link:test>`
 
+const only_normal_element = "<div></div>"
+const only_void_element = '<input>'
+const only_selfclosing_element = '<input />'
+const only_custom_element = '<me-custom></me-custom>'
+const only_namespaced_element = '<test:article></test:article>'
+const only_namespaced_custom_element = '<link:me-custom></link:me-custom>'
+
 // @ts-ignore
 const testConfig = async (config) => {
   // await is required for this test
   return await prettify(config_html, config)
 }
+
+test('Sole normal element is HTML', () => {
+  expect(isHtml(only_normal_element)).toBeTruthy()
+})
+
+test('Sole void element is HTML', () => {
+  expect(isHtml(only_void_element)).toBeTruthy()
+})
+
+test('Sole self-closing element is HTML', () => {
+  expect(isHtml(only_selfclosing_element)).toBeTruthy()
+})
+
+test('Sole custom element is HTML', () => {
+  expect(isHtml(only_custom_element)).toBeTruthy()
+})
+
+test('Sole namespaced element is HTML', () => {
+  expect(isHtml(only_namespaced_element)).toBeTruthy()
+})
+
+test('Sole namespaced custom element is HTML', () => {
+  expect(isHtml(only_namespaced_custom_element)).toBeTruthy()
+})
 
 test('Trailing plaintext sibling', () => {
   expect(prettify(trailing_plaintext_sibling, { tag_wrap: true })).toBe(pretty_trailing_plaintext_sibling)

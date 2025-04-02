@@ -3,6 +3,10 @@ import { ATTRIBUTE_IGNORE_STRING, CONFIG } from './constants.js'
 /**
  * Checks if content contains at least one HTML element or custom HTML element.
  * 
+ * The first regex matches void and self-closing elements.
+ * The second regex matches normal HTML elements, plus they can have a namespace.
+ * The third regex matches custom HTML elemtns, plus they can have a namespace.
+ * 
  * HTML elements should begin with a letter, and can end with a letter or number.
  * 
  * Custom elements must begin with a letter, and can end with a letter, number,
@@ -19,9 +23,9 @@ import { ATTRIBUTE_IGNORE_STRING, CONFIG } from './constants.js'
  * @returns {boolean} A boolean.
  */
 export const isHtml = (content) => 
-  /<(?:[A-Za-z]+[A-Za-z0-9]*)(?:\s+.*?)*?>/.test(content) ||
-  /<(?<Element>(?:[A-Za-z]+[A-Za-z0-9]*))(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content) || 
-  /<(?<Element>[a-z][a-z0-9._]*-[a-z0-9._-]+)(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content)
+  /<(?:[A-Za-z]+[A-Za-z0-9]*)(?:\s+.*?)*?\/{0,1}>/.test(content) ||
+  /<(?<Element>(?:[A-Za-z]+[A-Za-z0-9]*:)?(?:[A-Za-z]+[A-Za-z0-9]*))(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content) || 
+  /<(?<Element>(?:[a-z][a-z0-9._]*:)?[a-z][a-z0-9._]*-[a-z0-9._-]+)(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content)
 
 /**
  * Generic utility which merges two objects.
