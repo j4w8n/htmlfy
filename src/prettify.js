@@ -1,6 +1,16 @@
 import { closify } from './closify.js'
 import { minify } from './minify.js'
-import { isHtml, protectAttributes, setIgnoreAttribute, setIgnoreElement, trimify, unprotectAttributes, unsetIgnoreAttribute, unsetIgnoreElement, validateConfig } from './utils.js'
+import { 
+  isHtml, 
+  protectAttributes, 
+  setIgnoreAttribute, 
+  setIgnoreElement, 
+  trimify, 
+  unprotectAttributes, 
+  unsetIgnoreAttribute, 
+  unsetIgnoreElement, 
+  validateConfig 
+} from './utils.js'
 import { CONFIG, VOID_ELEMENTS } from './constants.js'
 
 /**
@@ -14,7 +24,7 @@ let strict
 let trim
 
 /**
- * @type {{ line: string[] }}
+ * @type {{ line: Record<string,string>[] }}
  */
 const convert = {
   line: []
@@ -33,16 +43,24 @@ const convert = {
 const enqueue = (html) => {
   convert.line = []
   let i = -1
+  // Regex to find tags OR text content between tags
+  const regex = /(<[^>]+>)|([^<]+)/g
 
-  html = html.replace(/<[^>]*>/g, (match) => {
-    convert.line.push(match)
+  html = html.replace(regex, (match, c1, c2) => {
+    if (c1) {
+      // It's a tag
+      convert.line.push({ type: "tag", value: match })
+    } else if (c2 && c2.trim().length > 0) {
+      // It's text content (and not just whitespace)
+      convert.line.push({ type: "text", value: match })
+    }
+
     i++
-
     return `\n[#-# : ${i} : ${match} : #-#]\n`
   })
 
   return html
-}
+};
 
 /**
  * Preprocess the HTML.
@@ -79,9 +97,9 @@ const process = (html, config) => {
   convert.line.forEach((source, index) => {
     html = html
       .replace(/\n+/g, '\n') /* Replace consecutive line returns with singles. */
-      .replace(`[#-# : ${index} : ${source} : #-#]`, (match) => {
+      .replace(`[#-# : ${index} : ${source.value} : #-#]`, (match) => {
         let subtrahend = 0
-        const prevLine = `[#-# : ${index - 1} : ${convert.line[index - 1]} : #-#]`
+        const prevLine = `[#-# : ${index - 1} : ${convert.line[index - 1]?.value} : #-#]`
 
         /**
          * Arbitratry character, to keep track of the string's length.
@@ -105,6 +123,9 @@ const process = (html, config) => {
         /* prevLine is a closing tag. */
         if (prevLine.indexOf(`#-# : ${index - 1} : </`) > -1) subtrahend++
 
+        /* prevLine is text. */
+        if (convert.line[index - 1]?.type === 'text') subtrahend++
+
         /* Determine offset for line indentation. */
         const offset = indents.length - subtrahend
 
@@ -122,10 +143,10 @@ const process = (html, config) => {
         const tag_regex = /<[A-Za-z]+\b[^>]*(?:.|\n)*?\/?>/g /* Is opening tag or void element. */
 
         /* Wrap the attributes of open tags and void elements. */
-        if (wrap && tag_regex.test(source) && source.length > wrap_width) {
+        if (wrap && tag_regex.test(source.value) && source.value.length > wrap_width) {
           const attribute_regex = /\s{1}[A-Za-z-]+(?:=".*?")?/g /* Matches all tag/element attributes. */
-          const tag_parts = source.split(attribute_regex).filter(Boolean)
-          const attributes = source.matchAll(attribute_regex)
+          const tag_parts = source.value.split(attribute_regex).filter(Boolean)
+          const attributes = source.value.matchAll(attribute_regex)
           const padding = step * offset
           const inner_padding = padding + step
 
@@ -160,7 +181,7 @@ const process = (html, config) => {
 
   /* Remove line returns, tabs, and consecutive spaces within html elements or their content. */
   html = html.replace(
-    />[^<]*?[^><\/\s][^<]*?<\/|>\s+[^><\s]|<script[^>]*>\s+<\/script>|<(\w+)>\s+<\/(\w+)|<(?:([\w:\._-]+)|([\w:\._-]+)[^>]*[^\/])>\s+<\/([\w:\._-]+)>/g,
+    /<[^\/].*[^/]>[^<]*?[^><\/\s][^<]*?<\/|<script[^>]*>\s+<\/script>|<(\w+)>\s+<\/(\w+)|<(?:([\w:\._-]+)|([\w:\._-]+)[^>]*[^\/])>\s+<\/([\w:\._-]+)>/g,
     match => match.replace(/\n|\t|\s{2,}/g, '')
   )
 
