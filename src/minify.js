@@ -27,8 +27,6 @@ export const minify = (html, check_html = true) => {
     .replace(/(.+=)'\s+'/ig, "$1''")
     .replace(/\s>/g, '>')
     .replace(/<\s\//g, '</')
-    .replace(/>\s/g, '>')
-    .replace(/\s</g, '<')
     .replace(/class=["']\s/g, (match) => match.replace(/\s/g, ''))
     .replace(/(class=.*)\s(["'])/g, '$1'+'$2')
 }
