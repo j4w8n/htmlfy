@@ -1,6 +1,6 @@
 {
 	"name": "htmlfy",
-	"version": "0.6.6",
+	"version": "0.6.7-next.0",
 	"description": "HTML formatter yo! Prettify, minify, and more!",
 	"scripts": {
 		"check": "tsc",
@@ -27,7 +27,15 @@
 		"type": "git",
 		"url": "git+https://github.com/j4w8n/htmlfy.git"
 	},
-	"keywords": ["HTML", "format", "formatter", "prettier", "minifier", "prettify", "minify"],
+	"keywords": [
+		"HTML",
+		"format",
+		"formatter",
+		"prettier",
+		"minifier",
+		"prettify",
+		"minify"
+	],
 	"license": "MIT",
 	"bugs": {
 		"url": "https://github.com/j4w8n/htmlfy/issues"
