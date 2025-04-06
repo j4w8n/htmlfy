@@ -1,15 +1,18 @@
 import { closify } from './closify.js'
 import { minify } from './minify.js'
 import { 
+  finalProtectContent,
   isHtml, 
   protectAttributes, 
   setIgnoreAttribute, 
   setIgnoreElement, 
   trimify, 
   unprotectAttributes, 
+  unprotectContent, 
   unsetIgnoreAttribute, 
   unsetIgnoreElement, 
-  validateConfig 
+  validateConfig, 
+  wordWrap
 } from './utils.js'
 import { CONFIG, VOID_ELEMENTS } from './constants.js'
 
@@ -89,6 +92,7 @@ const process = (html, config) => {
   const step = config.tab_size
   const wrap = config.tag_wrap
   const wrap_width = config.tag_wrap_width
+  const content_wrap = config.content_wrap
 
   /* Track current number of indentations needed. */
   let indents = ''
@@ -100,6 +104,7 @@ const process = (html, config) => {
       .replace(`[#-# : ${index} : ${source.value} : #-#]`, (match) => {
         let subtrahend = 0
         const prevLine = `[#-# : ${index - 1} : ${convert.line[index - 1]?.value} : #-#]`
+        const tag_regex = /<[A-Za-z]+\b[^>]*(?:.|\n)*?\/?>/g /* Is opening tag or void element. */
 
         /**
          * Arbitratry character, to keep track of the string's length.
@@ -136,11 +141,17 @@ const process = (html, config) => {
         if (strict && match.indexOf('<!--') > -1) return ''
 
         /* Remove the prefix and suffix, leaving the content. */
-        const result = match
+        let result = match
           .replace(`[#-# : ${index} : `, '')
           .replace(' : #-#]', '')
-        
-        const tag_regex = /<[A-Za-z]+\b[^>]*(?:.|\n)*?\/?>/g /* Is opening tag or void element. */
+
+        if (
+          convert.line[index]?.type === 'text' && 
+          content_wrap > 0 && 
+          result.length >= content_wrap
+        ) {
+          result = wordWrap(result, content_wrap, step * offset)
+        }
 
         /* Wrap the attributes of open tags and void elements. */
         if (wrap && tag_regex.test(source.value) && source.value.length > wrap_width) {
@@ -179,11 +190,17 @@ const process = (html, config) => {
   /* Preserve wrapped attributes. */
   if (wrap) html = protectAttributes(html)
 
+  /* Extra preserve wrapped content. */
+  if (content_wrap > 0 && /\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n/.test(html)) html = finalProtectContent(html)
+
   /* Remove line returns, tabs, and consecutive spaces within html elements or their content. */
   html = html.replace(
     /<(?<Element>.+).*>[^<]*?[^><\/\s][^<]*?<\/{1}\k<Element>|<script[^>]*>\s+<\/script>|<(\w+)>\s+<\/(\w+)|<(?:([\w:\._-]+)|([\w:\._-]+)[^>]*[^\/])>\s+<\/([\w:\._-]+)>/g,
     match => match.replace(/\n|\t|\s{2,}/g, '')
   )
+
+  /* Revert wrapped content. */
+  if (content_wrap > 0) html = unprotectContent(html)
 
   /* Revert wrapped attributes. */
   if (wrap) html = unprotectAttributes(html)
