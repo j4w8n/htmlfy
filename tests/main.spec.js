@@ -496,7 +496,7 @@ const pretty_trailing_plaintext_sibling = `<mg-input-text
   <div>Hello</div>
   <mg-button slot="append-input" label="search">
     <mg-icon icon="magnifying-glass"></mg-icon>
-     Search
+    Search
   </mg-button>
 </mg-input-text>`
 const leading_plaintext_sibling = '<mg-input-text identifier="identifier" name="input-name" label="Label" type="search" icon="magnifying-glass" placeholder="placeholder" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>."><div>Hello</div><mg-button slot="append-input" label="search"> Search<mg-icon icon="magnifying-glass"></mg-icon></mg-button></mg-input-text>'
@@ -512,7 +512,7 @@ const pretty_leading_plaintext_sibling = `<mg-input-text
 >
   <div>Hello</div>
   <mg-button slot="append-input" label="search">
-     Search
+    Search
     <mg-icon icon="magnifying-glass"></mg-icon>
   </mg-button>
 </mg-input-text>`
@@ -525,9 +525,9 @@ const pretty_heavy_plaintext = `<div>
 </div>
 <div>
   <i></i>
-   Simmer
+  Simmer
   <span>Down</span>
-  Y'all 
+  Y'all
 </div>`
 
 const custom_heavy_plaintext = `<name:test>Hello There World<br />Goodbye Now</name:test><link:test><thing:one></thing:one> Simmer<thing:two>Down</thing:two>Y'all </link:test>`
@@ -538,9 +538,9 @@ const pretty_custom_heavy_plaintext = `<name:test>
 </name:test>
 <link:test>
   <thing:one></thing:one>
-   Simmer
+  Simmer
   <thing:two>Down</thing:two>
-  Y'all 
+  Y'all
 </link:test>`
 
 const content_wrap =  "<mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</mg-card>"
