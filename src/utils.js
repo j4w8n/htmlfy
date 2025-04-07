@@ -1,4 +1,4 @@
-import { ATTRIBUTE_IGNORE_STRING, CONFIG } from './constants.js'
+import { IGNORE_STRING, CONFIG, CONTENT_IGNORE_STRING } from './constants.js'
 
 /**
  * Checks if content contains at least one HTML element or custom HTML element.
@@ -83,13 +83,46 @@ export const protectAttributes = (html) => {
   html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
     return match.replace(capture, (match) => {
       return match
-        .replace(/\n/g, ATTRIBUTE_IGNORE_STRING + 'nl!')
-        .replace(/\r/g, ATTRIBUTE_IGNORE_STRING + 'cr!')
-        .replace(/\s/g, ATTRIBUTE_IGNORE_STRING + 'ws!')
+        .replace(/\n/g, IGNORE_STRING + 'nl!')
+        .replace(/\r/g, IGNORE_STRING + 'cr!')
+        .replace(/\s/g, IGNORE_STRING + 'ws!')
     })
   })
 
   return html
+}
+
+/**
+ * 
+ * @param {string} html 
+ */
+export const protectContent = (html) => {
+  return html
+    .replace(/\n/g, CONTENT_IGNORE_STRING + 'nl!')
+    .replace(/\r/g, CONTENT_IGNORE_STRING + 'cr!')
+    .replace(/\s/g, CONTENT_IGNORE_STRING + 'ws!')
+}
+
+/**
+ * 
+ * @param {string} html 
+ */
+export const finalProtectContent = (html) => {
+  const regex = /\s*<([a-zA-Z0-9:-]+)[^>]*>\n\s*<\/\1>(?=\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n)(\n[ ]*\S[^\n]*\n)|<([a-zA-Z0-9:-]+)[^>]*>(?=\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n)(\n[ ]*\S[^\n]*\n\s*)<\/\3>/g
+  return html
+    .replace(regex, (/** @type {string} */match, p1, p2, p3, p4) => {
+      const text_to_protect = p2 || p4
+
+      if (!text_to_protect)
+        return match
+
+      const protected_text = text_to_protect
+       .replace(/\n/g, CONTENT_IGNORE_STRING + 'nl!')
+       .replace(/\r/g, CONTENT_IGNORE_STRING + 'cr!')
+       .replace(/\s/g, CONTENT_IGNORE_STRING + "ws!");
+
+      return match.replace(text_to_protect, protected_text)
+    })
 }
 
 /**
@@ -104,8 +137,8 @@ export const setIgnoreAttribute = (html) => {
   html = html.replace(regex, (/** @type {string} */match, p1, p2) => {
     return match.replace(p2, (match) => {
       return match
-        .replace(/</g, ATTRIBUTE_IGNORE_STRING + 'lt!')
-        .replace(/>/g, ATTRIBUTE_IGNORE_STRING + 'gt!')
+        .replace(/</g, IGNORE_STRING + 'lt!')
+        .replace(/>/g, IGNORE_STRING + 'gt!')
     })
   })
   
@@ -170,9 +203,26 @@ export const unprotectAttributes = (html) => {
   html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
     return match.replace(capture, (match) => {
       return match
-        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'nl!', "g"), '\n')
-        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'cr!', "g"), '\r')
-        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'ws!', "g"), ' ')
+        .replace(new RegExp(IGNORE_STRING + 'nl!', "g"), '\n')
+        .replace(new RegExp(IGNORE_STRING + 'cr!', "g"), '\r')
+        .replace(new RegExp(IGNORE_STRING + 'ws!', "g"), ' ')
+    })
+  })
+
+  return html
+}
+
+/**
+ * 
+ * @param {string} html 
+ */
+export const unprotectContent = (html) => {
+  html = html.replace(/.*__!i-£___£%__[a-z]{2}!.*/g, (/** @type {string} */match) => {
+    return match.replace(/__!i-£___£%__[a-z]{2}!/g, (match) => {
+      return match
+        .replace(new RegExp(CONTENT_IGNORE_STRING + 'nl!', "g"), '\n')
+        .replace(new RegExp(CONTENT_IGNORE_STRING + 'cr!', "g"), '\r')
+        .replace(new RegExp(CONTENT_IGNORE_STRING + 'ws!', "g"), ' ')
     })
   })
 
@@ -189,8 +239,8 @@ export const unsetIgnoreAttribute = (html) => {
   html = html.replace(/<[\w:\-]+([^>]*)>/g, (/** @type {string} */match, /** @type {any} */capture) => {
     return match.replace(capture, (match) => {
       return match
-        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'lt!', "g"), '<')
-        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'gt!', "g"), '>')
+        .replace(new RegExp(IGNORE_STRING + 'lt!', "g"), '<')
+        .replace(new RegExp(IGNORE_STRING + 'gt!', "g"), '>')
     })
   })
   
@@ -236,6 +286,7 @@ export const validateConfig = (config) => {
   if (typeof config !== 'object') throw new Error('Config must be an object.')
 
   const config_empty = !(
+    Object.hasOwn(config, 'content_wrap') ||
     Object.hasOwn(config, 'ignore') || 
     Object.hasOwn(config, 'ignore_with') || 
     Object.hasOwn(config, 'strict') || 
@@ -265,6 +316,9 @@ export const validateConfig = (config) => {
     config.tab_size = tab_size
   }
 
+  if (Object.hasOwn(config, 'content_wrap') && typeof config.content_wrap !== 'number')
+    throw new Error(`content_wrap config must be a number, not ${typeof config.tag_wrap_width}.`)
+
   if (Object.hasOwn(config, 'ignore') && (!Array.isArray(config.ignore) || !config.ignore?.every((e) => typeof e === 'string')))
     throw new Error('Ignore config must be an array of strings.')
 
@@ -285,4 +339,66 @@ export const validateConfig = (config) => {
 
   return mergeConfig(CONFIG, config)
 
+}
+
+/**
+ * 
+ * @param {string} text 
+ * @param {number} width 
+ * @param {number} indent
+ */
+export const wordWrap = (text, width, indent) => {
+  const words = text.split(/\s+/)
+  
+  // Handle empty or whitespace-only text
+  if (words.length === 0) {
+    return ""
+  }
+
+  const lines = []
+  let current_line = ""
+  let first_line = true
+
+  words.forEach((word) => {
+    if (word === "") return
+
+    if (current_line === "") {
+      // First word of a new line
+      current_line = word
+    } else if (word.length >= width) {
+      // Handle case where a single word is longer than width:
+      if (first_line) {
+        lines.push(current_line.padStart(current_line.length))
+        lines.push(word.padStart(word.length))
+        first_line = false
+      } else {
+        lines.push(current_line.padStart(current_line.length + indent))
+        lines.push(word.padStart(word.length + indent))
+      }
+    } else {
+      // Check if adding the next word exceeds the wrap width
+      const maybe_line = current_line + " " + word
+      if (maybe_line.length <= width) {
+        current_line = maybe_line
+      } else {
+        // Current line is finished, add it to results
+        if (first_line) {
+          lines.push(current_line.padStart(current_line.length))
+          first_line = false
+        } else {
+          lines.push(current_line.padStart(current_line.length + indent))
+        }
+
+        // Start a new line with the current word
+        current_line = word
+      }
+    }
+  })
+
+  // Add the last remaining line
+  if (current_line !== "") lines.push(current_line.padStart(current_line.length + indent))
+
+  const result = lines.join("\n")
+
+  return protectContent(result)
 }

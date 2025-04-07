@@ -6,6 +6,9 @@ import { prettify } from '../src/prettify.js'
 import { isHtml, trimify } from '../src/utils.js'
 import { expect, test } from 'vitest'
 
+const common_config = {
+  content_wrap: 60
+}
 
 const ugly_html = `<form id="3"     >     <!-- 
       
@@ -21,7 +24,9 @@ title="We need your email for verification." name="email" required><!--    This 
 <br><name:test></name:test>
 <link:test><div>Hello There</div></link:test>
 <custom-element class="hello there world" style="margin-top: 12px; margin-left: 12px;"><div>Goodbye World</div></custom-element>
-</form>`
+</form>
+<link:test>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</link:test>
+<mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</mg-card>`
 
 const entify_html = `<textarea  >
 
@@ -58,7 +63,27 @@ const pretty_html = `<form id="3">
   <custom-element class="hello there world" style="margin-top: 12px; margin-left: 12px;">
     <div>Goodbye World</div>
   </custom-element>
-</form>`
+</form>
+<link:test>
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+  do eiusmod tempor incididunt ut labore et dolore magna
+  aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+  ullamco laboris nisi ut aliquip ex ea commodo consequat.
+  Duis aute irure dolor in reprehenderit in voluptate velit
+  esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+  occaecat cupidatat non proident, sunt in culpa qui officia
+  deserunt mollit anim id est laborum.
+</link:test>
+<mg-card>
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+  do eiusmod tempor incididunt ut labore et dolore magna
+  aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+  ullamco laboris nisi ut aliquip ex ea commodo consequat.
+  Duis aute irure dolor in reprehenderit in voluptate velit
+  esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+  occaecat cupidatat non proident, sunt in culpa qui officia
+  deserunt mollit anim id est laborum.
+</mg-card>`
 
 const pretty_strict_html = `<form id="3">
   <label for="email-0">What's your email?</label>
@@ -81,7 +106,27 @@ const pretty_strict_html = `<form id="3">
   <custom-element class="hello there world" style="margin-top: 12px; margin-left: 12px;">
     <div>Goodbye World</div>
   </custom-element>
-</form>`
+</form>
+<link:test>
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+  do eiusmod tempor incididunt ut labore et dolore magna
+  aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+  ullamco laboris nisi ut aliquip ex ea commodo consequat.
+  Duis aute irure dolor in reprehenderit in voluptate velit
+  esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+  occaecat cupidatat non proident, sunt in culpa qui officia
+  deserunt mollit anim id est laborum.
+</link:test>
+<mg-card>
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+  do eiusmod tempor incididunt ut labore et dolore magna
+  aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+  ullamco laboris nisi ut aliquip ex ea commodo consequat.
+  Duis aute irure dolor in reprehenderit in voluptate velit
+  esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+  occaecat cupidatat non proident, sunt in culpa qui officia
+  deserunt mollit anim id est laborum.
+</mg-card>`
 
 const pretty_wrapped_html = `<form id="3">
   <!-- This is a comment. -->
@@ -118,7 +163,27 @@ const pretty_wrapped_html = `<form id="3">
   >
     <div>Goodbye World</div>
   </custom-element>
-</form>`
+</form>
+<link:test>
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+  do eiusmod tempor incididunt ut labore et dolore magna
+  aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+  ullamco laboris nisi ut aliquip ex ea commodo consequat.
+  Duis aute irure dolor in reprehenderit in voluptate velit
+  esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+  occaecat cupidatat non proident, sunt in culpa qui officia
+  deserunt mollit anim id est laborum.
+</link:test>
+<mg-card>
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+  do eiusmod tempor incididunt ut labore et dolore magna
+  aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+  ullamco laboris nisi ut aliquip ex ea commodo consequat.
+  Duis aute irure dolor in reprehenderit in voluptate velit
+  esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+  occaecat cupidatat non proident, sunt in culpa qui officia
+  deserunt mollit anim id est laborum.
+</mg-card>`
 
 const pretty_wrapped_tab4_html = `<form id="3">
     <!-- This is a comment. -->
@@ -155,7 +220,27 @@ const pretty_wrapped_tab4_html = `<form id="3">
     >
         <div>Goodbye World</div>
     </custom-element>
-</form>`
+</form>
+<link:test>
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+    do eiusmod tempor incididunt ut labore et dolore magna
+    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+    ullamco laboris nisi ut aliquip ex ea commodo consequat.
+    Duis aute irure dolor in reprehenderit in voluptate velit
+    esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+    occaecat cupidatat non proident, sunt in culpa qui officia
+    deserunt mollit anim id est laborum.
+</link:test>
+<mg-card>
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+    do eiusmod tempor incididunt ut labore et dolore magna
+    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+    ullamco laboris nisi ut aliquip ex ea commodo consequat.
+    Duis aute irure dolor in reprehenderit in voluptate velit
+    esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+    occaecat cupidatat non proident, sunt in culpa qui officia
+    deserunt mollit anim id est laborum.
+</mg-card>`
 
 const pretty_wrapped_strict_html = `<form id="3">
   <label for="email-0">What's your email?</label>
@@ -187,7 +272,27 @@ const pretty_wrapped_strict_html = `<form id="3">
   >
     <div>Goodbye World</div>
   </custom-element>
-</form>`
+</form>
+<link:test>
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+  do eiusmod tempor incididunt ut labore et dolore magna
+  aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+  ullamco laboris nisi ut aliquip ex ea commodo consequat.
+  Duis aute irure dolor in reprehenderit in voluptate velit
+  esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+  occaecat cupidatat non proident, sunt in culpa qui officia
+  deserunt mollit anim id est laborum.
+</link:test>
+<mg-card>
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+  do eiusmod tempor incididunt ut labore et dolore magna
+  aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+  ullamco laboris nisi ut aliquip ex ea commodo consequat.
+  Duis aute irure dolor in reprehenderit in voluptate velit
+  esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+  occaecat cupidatat non proident, sunt in culpa qui officia
+  deserunt mollit anim id est laborum.
+</mg-card>`
 
 const closify_html = `<form id="3">
 <!-- This is a comment. -->
@@ -312,7 +417,7 @@ const custom_elements_pretty_with_nesting = `<mg-input-toggle items="⚠️ Prop
   </div>
   <nested-custom>Hello</nested-custom>
 </mg-input-toggle>`
-const custom_elements_with_nesting_tag_wrap = '<mg-input-toggle items="⚠️ Property must be set through a script or a framework-specific syntax." identifier="identifier" name="input-name" label="Label" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>."><div>Let the spans fly.<span slot="item-1">non</span><span slot="item-2">oui</span></div><nested-custom>Hello</nested-custom></mg-input-toggle>'
+const custom_elements_with_nesting_tag_wrap = '<mg-input-toggle items="⚠️ Property must be set through a script or a framework-specific syntax." identifier="identifier" name="input-name" label="Label" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>."><div>Let the spans fly.<span slot="item-1">non</span><span slot="item-2">oui</span></div><link:test>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</link:test><mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</mg-card><nested-custom>Hello</nested-custom></mg-input-toggle>'
 const custom_elements_pretty_with_nesting_tag_wrap = `<mg-input-toggle
   items="⚠️ Property must be set through a script or a framework-specific syntax."
   identifier="identifier"
@@ -326,6 +431,26 @@ const custom_elements_pretty_with_nesting_tag_wrap = `<mg-input-toggle
     <span slot="item-1">non</span>
     <span slot="item-2">oui</span>
   </div>
+  <link:test>
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+    do eiusmod tempor incididunt ut labore et dolore magna
+    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+    ullamco laboris nisi ut aliquip ex ea commodo consequat.
+    Duis aute irure dolor in reprehenderit in voluptate velit
+    esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+    occaecat cupidatat non proident, sunt in culpa qui officia
+    deserunt mollit anim id est laborum.
+  </link:test>
+  <mg-card>
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+    do eiusmod tempor incididunt ut labore et dolore magna
+    aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+    ullamco laboris nisi ut aliquip ex ea commodo consequat.
+    Duis aute irure dolor in reprehenderit in voluptate velit
+    esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+    occaecat cupidatat non proident, sunt in culpa qui officia
+    deserunt mollit anim id est laborum.
+  </mg-card>
   <nested-custom>Hello</nested-custom>
 </mg-input-toggle>`
 
@@ -371,7 +496,7 @@ const pretty_trailing_plaintext_sibling = `<mg-input-text
   <div>Hello</div>
   <mg-button slot="append-input" label="search">
     <mg-icon icon="magnifying-glass"></mg-icon>
-     Search
+    Search
   </mg-button>
 </mg-input-text>`
 const leading_plaintext_sibling = '<mg-input-text identifier="identifier" name="input-name" label="Label" type="search" icon="magnifying-glass" placeholder="placeholder" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>."><div>Hello</div><mg-button slot="append-input" label="search"> Search<mg-icon icon="magnifying-glass"></mg-icon></mg-button></mg-input-text>'
@@ -387,7 +512,7 @@ const pretty_leading_plaintext_sibling = `<mg-input-text
 >
   <div>Hello</div>
   <mg-button slot="append-input" label="search">
-     Search
+    Search
     <mg-icon icon="magnifying-glass"></mg-icon>
   </mg-button>
 </mg-input-text>`
@@ -400,9 +525,9 @@ const pretty_heavy_plaintext = `<div>
 </div>
 <div>
   <i></i>
-   Simmer
+  Simmer
   <span>Down</span>
-  Y'all 
+  Y'all
 </div>`
 
 const custom_heavy_plaintext = `<name:test>Hello There World<br />Goodbye Now</name:test><link:test><thing:one></thing:one> Simmer<thing:two>Down</thing:two>Y'all </link:test>`
@@ -413,10 +538,35 @@ const pretty_custom_heavy_plaintext = `<name:test>
 </name:test>
 <link:test>
   <thing:one></thing:one>
-   Simmer
+  Simmer
   <thing:two>Down</thing:two>
-  Y'all 
+  Y'all
 </link:test>`
+
+const content_wrap =  "<mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</mg-card>"
+const wrapped_content_wrap = `<mg-card>
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+  do eiusmod tempor incididunt ut labore et dolore magna
+  aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+  ullamco laboris nisi ut aliquip ex ea commodo consequat.
+  Duis aute irure dolor in reprehenderit in voluptate velit
+  esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+  occaecat cupidatat non proident, sunt in culpa qui officia
+  deserunt mollit anim id est laborum.
+</mg-card>`
+
+const content_wrap_siblings =  "<div><mg-card></mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>"
+const wrapped_content_wrap_siblings = `<div>
+  <mg-card></mg-card>
+  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+  do eiusmod tempor incididunt ut labore et dolore magna
+  aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+  ullamco laboris nisi ut aliquip ex ea commodo consequat.
+  Duis aute irure dolor in reprehenderit in voluptate velit
+  esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+  occaecat cupidatat non proident, sunt in culpa qui officia
+  deserunt mollit anim id est laborum.
+</div>`
 
 const only_normal_element = "<div></div>"
 const only_void_element = '<input>'
@@ -430,6 +580,14 @@ const testConfig = async (config) => {
   // await is required for this test
   return await prettify(config_html, config)
 }
+
+test('Content wrap', () => {
+  expect(prettify(content_wrap, { content_wrap: 60 })).toBe(wrapped_content_wrap)
+})
+
+test('Content wrap with siblings', () => {
+  expect(prettify(content_wrap_siblings, { content_wrap: 60 })).toBe(wrapped_content_wrap_siblings)
+})
 
 test('Sole normal element is HTML', () => {
   expect(isHtml(only_normal_element)).toBeTruthy()
@@ -481,7 +639,7 @@ test('Trimify', () => {
 })
 
 test('Prettify', () => {
-  expect(prettify(ugly_html)).toBe(pretty_html)
+  expect(prettify(ugly_html, common_config)).toBe(pretty_html)
 })
 
 test('Prettify with HTML check', () => {
@@ -489,19 +647,23 @@ test('Prettify with HTML check', () => {
 })
 
 test('Prettify with strict HTML', () => {
-  expect(prettify(ugly_html, { strict: true })).toBe(pretty_strict_html)
+  expect(prettify(ugly_html, { ...common_config, strict: true })).toBe(pretty_strict_html)
 })
 
 test('Prettify with tag wrap', () => {
-  expect(prettify(ugly_html, { tag_wrap: true })).toBe(pretty_wrapped_html)
+  expect(prettify(ugly_html, { ...common_config, tag_wrap: true })).toBe(pretty_wrapped_html)
+})
+
+test('Prettify with content wrap', () => {
+  expect(prettify(ugly_html, { content_wrap: 60 })).toBe(pretty_html)
 })
 
 test('Prettify with tag wrap and tab size', () => {
-  expect(prettify(ugly_html, { tag_wrap: true, tab_size: 4 })).toBe(pretty_wrapped_tab4_html)
+  expect(prettify(ugly_html, { ...common_config, tag_wrap: true, tab_size: 4 })).toBe(pretty_wrapped_tab4_html)
 })
 
 test('Prettify with tag wrap and strict HTML', () => {
-  expect(prettify(ugly_html, { strict: true, tag_wrap: true })).toBe(pretty_wrapped_strict_html)
+  expect(prettify(ugly_html, { ...common_config, strict: true, tag_wrap: true })).toBe(pretty_wrapped_strict_html)
 })
 
 test('Prettify with empty attributes', () => {
@@ -553,7 +715,7 @@ test('Custom elements with nesting', () => {
 })
 
 test('Custom elements with nesting and tag wrap', () => {
-  expect(prettify(custom_elements_with_nesting_tag_wrap, { tag_wrap: true })).toBe(custom_elements_pretty_with_nesting_tag_wrap)
+  expect(prettify(custom_elements_with_nesting_tag_wrap, { ...common_config, tag_wrap: true })).toBe(custom_elements_pretty_with_nesting_tag_wrap)
 })
 
 test('Elements with multiple standalone attributes', () => {
@@ -566,7 +728,7 @@ test('Elements with multiple standalone attributes and tag wrap', () => {
 
 test('Minify', () => {
   expect(minify(pretty_html)).toBe(
-    `<form id="3"><!-- This is a comment. --><!-- This is a second comment. --><label for="email-0">What's your email?</label><input id="email-0" type="email" title="We need your email for verification." name="email" required /><!-- This is another comment. --><label for="1">What fruits do you like?</label><fieldset id="1"><input id="fruits-1-0" type="checkbox" name="fruits" value="apples" /><label for="fruits-1-0">Apples</label><br /><div><!-- This is an embedded comment. --></div><input id="fruits-1-1" type="checkbox" name="fruits" value="grapes" /><label for="fruits-1-1">Grapes</label><br /></fieldset><br /><name:test></name:test><link:test><div>Hello There</div></link:test><custom-element class="hello there world" style="margin-top: 12px; margin-left: 12px;"><div>Goodbye World</div></custom-element></form>`
+    `<form id="3"><!-- This is a comment. --><!-- This is a second comment. --><label for="email-0">What's your email?</label><input id="email-0" type="email" title="We need your email for verification." name="email" required /><!-- This is another comment. --><label for="1">What fruits do you like?</label><fieldset id="1"><input id="fruits-1-0" type="checkbox" name="fruits" value="apples" /><label for="fruits-1-0">Apples</label><br /><div><!-- This is an embedded comment. --></div><input id="fruits-1-1" type="checkbox" name="fruits" value="grapes" /><label for="fruits-1-1">Grapes</label><br /></fieldset><br /><name:test></name:test><link:test><div>Hello There</div></link:test><custom-element class="hello there world" style="margin-top: 12px; margin-left: 12px;"><div>Goodbye World</div></custom-element></form><link:test>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</link:test><mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</mg-card>`
   )
 })
 

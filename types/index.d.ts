@@ -1,5 +1,6 @@
 declare module 'htmlfy' {
   export interface UserConfig {
+    content_wrap?: number;
     ignore?: string[];
     ignore_with?: string;
     strict?: boolean;
