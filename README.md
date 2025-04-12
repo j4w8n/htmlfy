@@ -126,6 +126,7 @@ These configuration options can only be passed to `prettify`.
 Default config:
 ```js
 {
+  content_wrap: 0,
   ignore: [],
   ignore_with: '_!i-£___£%_',
   strict: false,
@@ -134,6 +135,25 @@ Default config:
   tag_wrap_width: 80,
   trim: []
 }
+```
+
+### Content Wrap
+Wrap text content at a certain character-width breakpoint.
+
+```js
+import { prettify } from 'htmlfy'
+
+const html = '<div>Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis.</div>'
+console.log(prettify(html, { content_wrap: 40 }))
+/*
+<div>
+  Lorem ipsum dolor sit amet consectetur
+  adipiscing elit. Quisque faucibus ex
+  sapien vitae pellentesque sem placerat.
+  In id cursus mi pretium tellus duis
+  convallis.
+</div>
+*/
 ```
 
 ### Ignore
