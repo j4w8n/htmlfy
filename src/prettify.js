@@ -90,8 +90,7 @@ const preprocess = (html) => {
  */
 const process = (html, config) => {
   const step = config.tab_size
-  const wrap = config.tag_wrap
-  const wrap_width = config.tag_wrap_width
+  const tag_wrap = config.tag_wrap
   const content_wrap = config.content_wrap
 
   /* Track current number of indentations needed. */
@@ -154,7 +153,7 @@ const process = (html, config) => {
         }
 
         /* Wrap the attributes of open tags and void elements. */
-        if (wrap && tag_regex.test(source.value) && source.value.length > wrap_width) {
+        if (tag_wrap > 0 && source.value.length > tag_wrap && tag_regex.test(source.value)) {
           const attribute_regex = /\s{1}[A-Za-z-]+(?:=".*?")?/g /* Matches all tag/element attributes. */
           const tag_parts = source.value.split(attribute_regex).filter(Boolean)
           const attributes = source.value.matchAll(attribute_regex)
@@ -188,7 +187,7 @@ const process = (html, config) => {
   })
 
   /* Preserve wrapped attributes. */
-  if (wrap) html = protectAttributes(html)
+  if (tag_wrap > 0) html = protectAttributes(html)
 
   /* Extra preserve wrapped content. */
   if (content_wrap > 0 && /\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n/.test(html)) html = finalProtectContent(html)
@@ -203,7 +202,7 @@ const process = (html, config) => {
   if (content_wrap > 0) html = unprotectContent(html)
 
   /* Revert wrapped attributes. */
-  if (wrap) html = unprotectAttributes(html)
+  if (tag_wrap > 0) html = unprotectAttributes(html)
 
   /* Remove self-closing nature of void elements. */
   if (strict) html = html.replace(/\s\/>|\/>/g, '>')

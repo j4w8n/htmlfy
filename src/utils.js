@@ -328,9 +328,23 @@ export const validateConfig = (config) => {
   if (Object.hasOwn(config, 'strict') && typeof config.strict !== 'boolean')
     throw new Error(`Strict config must be a boolean, not ${typeof config.strict}.`)
 
-  if (Object.hasOwn(config, 'tag_wrap') && typeof config.tag_wrap !== 'boolean')
-    throw new Error(`tag_wrap config must be a boolean, not ${typeof config.tag_wrap}.`)
+  /* TODO remove in v0.9.0 */
+  if (Object.hasOwn(config, 'tag_wrap') && typeof config.tag_wrap === 'boolean') {
+    console.warn('tag_wrap as a boolean is deprecated, and will not be supported in v0.9.0+. Use `tag_wrap: <number>` instead; where <number> is the max character width acceptable before wrapping attributes.')
+    if (config.tag_wrap_width)
+      config.tag_wrap = config.tag_wrap_width
+    else
+      config.tag_wrap = CONFIG.tag_wrap_width
+  }
+  
+  if (Object.hasOwn(config, 'tag_wrap') && typeof config.tag_wrap !== 'number')
+    throw new Error(`tag_wrap config must be a number, not ${typeof config.tag_wrap}.`)
 
+  /* TODO remove in v0.9.0 */
+  if (Object.hasOwn(config, 'tag_wrap_width'))
+    console.warn('tag_wrap_width is deprecated, and will not be supported in v0.9.0+. Use `tag_wrap: <number>` instead; where <number> is the max character width acceptable before wrapping attributes.')
+
+  /* TODO remove in v0.9.0 */
   if (Object.hasOwn(config, 'tag_wrap_width') && typeof config.tag_wrap_width !== 'number')
     throw new Error(`tag_wrap_width config must be a number, not ${typeof config.tag_wrap_width}.`)
 

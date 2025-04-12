@@ -614,10 +614,12 @@ test('Sole namespaced custom element is HTML', () => {
 })
 
 test('Trailing plaintext sibling', () => {
+  // @ts-ignore // convert to number in v0.9.0
   expect(prettify(trailing_plaintext_sibling, { tag_wrap: true })).toBe(pretty_trailing_plaintext_sibling)
 })
 
 test('Leading plaintext sibling', () => {
+  // @ts-ignore // convert to number in v0.9.0
   expect(prettify(leading_plaintext_sibling, { tag_wrap: true })).toBe(pretty_leading_plaintext_sibling)
 })
 
@@ -651,6 +653,7 @@ test('Prettify with strict HTML', () => {
 })
 
 test('Prettify with tag wrap', () => {
+  // @ts-ignore // convert to number in v0.9.0
   expect(prettify(ugly_html, { ...common_config, tag_wrap: true })).toBe(pretty_wrapped_html)
 })
 
@@ -659,10 +662,12 @@ test('Prettify with content wrap', () => {
 })
 
 test('Prettify with tag wrap and tab size', () => {
+  // @ts-ignore // convert to number in v0.9.0
   expect(prettify(ugly_html, { ...common_config, tag_wrap: true, tab_size: 4 })).toBe(pretty_wrapped_tab4_html)
 })
 
 test('Prettify with tag wrap and strict HTML', () => {
+  // @ts-ignore // convert to number in v0.9.0
   expect(prettify(ugly_html, { ...common_config, strict: true, tag_wrap: true })).toBe(pretty_wrapped_strict_html)
 })
 
@@ -671,10 +676,12 @@ test('Prettify with empty attributes', () => {
 })
 
 test('Standalone tag wrap', () => {
+  // @ts-ignore // convert to number in v0.9.0
   expect(prettify(standalone_tag_wrap, { tag_wrap: true })).toBe(standalone_pretty_tag_wrap)
 })
 
 test('Standalone input wrap', () => {
+  // @ts-ignore // convert to number in v0.9.0
   expect(prettify(standalone_input_wrap, { tag_wrap: true })).toBe(standalone_pretty_input_wrap)
 })
 
@@ -683,6 +690,7 @@ test('Attribute with html text for value', () => {
 })
 
 test('Tag wrapped attribute with html text for value', () => {
+  // @ts-ignore // convert to number in v0.9.0
   expect(prettify(attribute_with_hyphen_tag_wrap, { tag_wrap: true })).toBe(attribute_with_hyphen_pretty_tag_wrap)
 })
 
@@ -695,7 +703,7 @@ test('Crazy attribute with html text for value', () => {
 })
 
 test('Crazy attribute with html text for value with tag wrap', () => {
-  expect(prettify(attribute_with_html_crazy_name_tag_wrap, { tag_wrap: true })).toBe(attribute_with_html_crazy_name_pretty_tag_wrap)
+  expect(prettify(attribute_with_html_crazy_name_tag_wrap, { tag_wrap: 60 })).toBe(attribute_with_html_crazy_name_pretty_tag_wrap)
 })
 
 test('Regular elements with simple nesting', () => {
@@ -715,7 +723,7 @@ test('Custom elements with nesting', () => {
 })
 
 test('Custom elements with nesting and tag wrap', () => {
-  expect(prettify(custom_elements_with_nesting_tag_wrap, { ...common_config, tag_wrap: true })).toBe(custom_elements_pretty_with_nesting_tag_wrap)
+  expect(prettify(custom_elements_with_nesting_tag_wrap, { ...common_config, tag_wrap: 60 })).toBe(custom_elements_pretty_with_nesting_tag_wrap)
 })
 
 test('Elements with multiple standalone attributes', () => {
@@ -723,7 +731,7 @@ test('Elements with multiple standalone attributes', () => {
 })
 
 test('Elements with multiple standalone attributes and tag wrap', () => {
-  expect(prettify(elements_with_multiple_standalone_attributes_and_html, { tag_wrap: true })).toBe(elements_pretty_with_multiple_standalone_attributes_and_html_tag_wrap)
+  expect(prettify(elements_with_multiple_standalone_attributes_and_html, { tag_wrap: 60 })).toBe(elements_pretty_with_multiple_standalone_attributes_and_html_tag_wrap)
 })
 
 test('Minify', () => {
