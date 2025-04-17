@@ -359,58 +359,51 @@ export const validateConfig = (config) => {
  * 
  * @param {string} text 
  * @param {number} width 
- * @param {number} indent
+ * @param {string} indent
  */
 export const wordWrap = (text, width, indent) => {
-  const words = text.split(/\s+/)
+  const words = text.trim().split(/\s+/)
   
-  // Handle empty or whitespace-only text
-  if (words.length === 0) {
+  if (words.length === 0 || (words.length === 1 && words[0] === ''))
     return ""
-  }
 
   const lines = []
   let current_line = ""
-  let first_line = true
+  const padding_string = indent
 
   words.forEach((word) => {
     if (word === "") return
 
-    if (current_line === "") {
-      // First word of a new line
-      current_line = word
-    } else if (word.length >= width) {
-      // Handle case where a single word is longer than width:
-      if (first_line) {
-        lines.push(current_line.padStart(current_line.length))
-        lines.push(word.padStart(word.length))
-        first_line = false
-      } else {
-        lines.push(current_line.padStart(current_line.length + indent))
-        lines.push(word.padStart(word.length + indent))
-      }
-    } else {
-      // Check if adding the next word exceeds the wrap width
-      const maybe_line = current_line + " " + word
-      if (maybe_line.length <= width) {
-        current_line = maybe_line
-      } else {
-        // Current line is finished, add it to results
-        if (first_line) {
-          lines.push(current_line.padStart(current_line.length))
-          first_line = false
-        } else {
-          lines.push(current_line.padStart(current_line.length + indent))
-        }
+    if (word.length >= width) {
+      /* If there's content on the current line, push it first with correct padding. */
+      if (current_line !== "")
+        lines.push(lines.length === 0 ? indent + current_line : padding_string + current_line)
 
-        // Start a new line with the current word
-        current_line = word
+      /* Push a long word on its own line with correct padding. */
+      lines.push(lines.length === 0 ? indent + word : padding_string + word)
+      current_line = "" // Reset current line
+      return // Move to the next word
+    }
+
+    /* Check if adding the next word exceeds the wrap width. */
+    const test_line = current_line === "" ? word : current_line + " " + word
+
+    if (test_line.length <= width) {
+      current_line = test_line
+    } else {
+      /* Word doesn't fit, finish the current line and push it. */
+      if (current_line !== "") {
+         /* Add padding based on whether it's the first line added or not. */
+         lines.push(lines.length === 0 ? indent + current_line : padding_string + current_line)
       }
+      /* Start a new line with the current word. */
+      current_line = word
     }
   })
 
-  // Add the last remaining line
-  if (current_line !== "") lines.push(current_line.padStart(current_line.length + indent))
+  /* Add the last remaining line with appropriate padding. */
+  if (current_line !== "")
+    lines.push(lines.length === 0 ? indent + current_line : padding_string + current_line)
 
   const result = lines.join("\n")
 
