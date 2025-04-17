@@ -366,7 +366,7 @@ const standalone_pretty_input_wrap = `<input
   type="checkbox"
   name="fruits"
   value="apples"
- />`
+/>`
 
 const attribute_with_html_crazy_name = '<cus---t0m...element___ boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>."></cus---t0m...element___>'
 const attribute_with_html_crazy_name_tag_wrap = '<cus---t0m...element___ boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>."></cus---t0m...element___>'
