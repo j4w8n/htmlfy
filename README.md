@@ -1,14 +1,14 @@
 # htmlfy
 HTML formatter yo! Prettify, minify and more!
 
-`htmlfy` is a fork of [html-formatter](https://github.com/uznam8x/html-formatter/tree/master). Most of the processing logic has been preserved, and full credit for that goes to the original author. I've made the following major enhancements.
+`htmlfy` is a fork of [html-formatter](https://github.com/uznam8x/html-formatter/tree/master). A lot of the processing logic has been preserved, and full credit for that goes to the original author. I've made the following major enhancements.
 
 - Fully typed.
 - Converted to ESM.
 - Added configuration options.
 - Added support for custom HTML elements (web components)
 - Lots of refactoring.
-- Improved some of the processing logic.
+- Made it go brrr fast.
 
 ## Install
 
@@ -137,7 +137,7 @@ Default config:
 ```
 
 ### Content Wrap
-Wrap text content at a certain character-width breakpoint.
+Wrap text content at a certain character-width breakpoint. Default is `0`, which does not wrap.
 
 ```js
 import { prettify } from 'htmlfy'
