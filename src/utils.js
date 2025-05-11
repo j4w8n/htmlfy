@@ -146,6 +146,11 @@ export const setIgnoreAttribute = (html) => {
 }
 
 /**
+ * @typedef {"<" | ">" | "\n" | "\r" | " " | "\t"} ReplacementKey
+ * Defines the possible keys for the replacements object.
+ */
+
+/**
  * Replace entities with ignore string.
  * 
  * @param {string} html 
@@ -156,21 +161,54 @@ export const setIgnoreElement = (html, config) => {
   const ignore = config.ignore
   const ignore_string = config.ignore_with
 
-  for (let e = 0; e < ignore.length; e++) {
-    const regex = new RegExp(`<${ignore[e]}[^>]*>((.|\n)*?)<\/${ignore[e]}>`, "g")
-
-    html = html.replace(regex, (/** @type {string} */match, /** @type {any} */capture) => {
-      return match.replace(capture, (match) => {
-        return match
-          .replace(/</g, '-' + ignore_string + 'lt-')
-          .replace(/>/g, '-' + ignore_string + 'gt-')
-          .replace(/\n/g, '-' + ignore_string + 'nl-')
-          .replace(/\r/g, '-' + ignore_string + 'cr-')
-          .replace(/\s/g, '-' + ignore_string + 'ws-')
-      })
-    })
+  /* Pre-create replacement map for faster lookup. */
+  const replacements = {
+    "<": "-" + ignore_string + "lt-",
+    ">": "-" + ignore_string + "gt-",
+    "\n": "-" + ignore_string + "nl-",
+    "\r": "-" + ignore_string + "cr-",
+    " ": "-" + ignore_string + "ws-", // Use space ' ' as key
+    "\t": "-" + ignore_string + "tab-", // Use tab '\t' as key (add placeholder if needed)
+    // Add other specific whitespace chars like \v, \f if necessary
   }
-  
+  /* Regex to match any character we need to replace inside the ignored content. */
+  const charReplaceRegex = /[<>\n\r \t]/g
+
+  for (let e = 0; e < ignore.length; e++) {
+    const tagName = ignore[e].replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+    const regex = new RegExp(
+      `<${tagName}[^>]*>(.*?)<\/${tagName}>`,
+      "gs" // Use 'g' (global) and 's' (dotAll) flags
+    );
+
+    html = html.replace(
+      regex,
+      (/** @type {string} */ fullMatch, /** @type {string} */ capture) => {
+        const processedCapture = capture.replace(
+          charReplaceRegex,
+          (/** @type {string} */ char) => {
+            return replacements[/** @type {ReplacementKey} */ (char)] // Return the placeholder
+            // Or safer if map might be incomplete: return replacements[char] || char
+          }
+        );
+
+        /* Reconstruct the string using original tags and processed content. */
+        const openingTagEnd = fullMatch.indexOf(">") + 1
+        const closingTagStart = fullMatch.lastIndexOf(`</${tagName}>`)
+
+        /* Check if tags were found (basic sanity check). */
+        if (openingTagEnd > 0 && closingTagStart > 0) {
+          const openingTag = fullMatch.substring(0, openingTagEnd)
+          const closingTag = fullMatch.substring(closingTagStart)
+          return openingTag + processedCapture + closingTag
+        } else {
+          // Should not happen with valid HTML and correct regex
+          // Return original match to avoid breaking things further
+          return fullMatch
+        }
+      }
+    )
+  }
   return html
 }
 
@@ -229,6 +267,13 @@ export const unprotectContent = (html) => {
   return html
 }
 
+const escapedIgnoreString = IGNORE_STRING.replace(
+  /[-\/\\^$*+?.()|[\]{}]/g,
+  "\\$&"
+);
+const ltPlaceholderRegex = new RegExp(escapedIgnoreString + "lt!", "g");
+const gtPlaceholderRegex = new RegExp(escapedIgnoreString + "gt!", "g");
+
 /**
  * Replace ignore string with html brackets.
  * 
@@ -236,15 +281,24 @@ export const unprotectContent = (html) => {
  * @returns {string}
  */
 export const unsetIgnoreAttribute = (html) => {
-  html = html.replace(/<[\w:\-]+([^>]*)>/g, (/** @type {string} */match, /** @type {any} */capture) => {
-    return match.replace(capture, (match) => {
-      return match
-        .replace(new RegExp(IGNORE_STRING + 'lt!', "g"), '<')
-        .replace(new RegExp(IGNORE_STRING + 'gt!', "g"), '>')
-    })
-  })
-  
-  return html
+  /* Regex to find opening tags and capture their attributes. */
+  const tagRegex = /<([\w:\-]+)([^>]*)>/g
+
+  return html.replace(
+    tagRegex,
+    (
+      /** @type {string} */ fullMatch,
+      /** @type {string} */ tagName,
+      /** @type {string} */ attributesCapture
+    ) => {
+      const processedAttributes = attributesCapture
+        .replace(ltPlaceholderRegex, "<")
+        .replace(gtPlaceholderRegex, ">")
+
+      /* Reconstruct the tag. */
+      return `<${tagName}${processedAttributes}>`
+    }
+  )
 }
 
 /**
@@ -272,7 +326,6 @@ export const unsetIgnoreElement = (html, config) => {
       })
     })
   }
-  
   return html
 }
 

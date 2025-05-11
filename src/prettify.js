@@ -91,6 +91,8 @@ const process = (html, config) => {
   const step = " ".repeat(config.tab_size)
   const tag_wrap = config.tag_wrap
   const content_wrap = config.content_wrap
+  const ignore_with = config.ignore_with
+  const placeholder_template = `-${ignore_with}`
 
   /* Track current number of indentations needed. */
   let indents = ''
@@ -99,11 +101,19 @@ const process = (html, config) => {
   const output_lines = []
   const tag_regex = /<[A-Za-z]+\b[^>]*(?:.|\n)*?\/?>/g /* Is opening tag or void element. */
   const attribute_regex = /\s{1}[A-Za-z-]+(?:=".*?")?/g /* Matches all tag/element attributes. */
-  const preserve_whitespace_tags = new Set(["pre", "textarea", "script", "style"])
 
   /* Process lines and indent. */
   convert.line.forEach((source, index) => {
     let current_line_value = source.value
+
+    const is_ignored_content =
+      current_line_value.startsWith(placeholder_template + "lt--") ||
+      current_line_value.startsWith(placeholder_template + "gt--") ||
+      current_line_value.startsWith(placeholder_template + "nl--") ||
+      current_line_value.startsWith(placeholder_template + "cr--") ||
+      current_line_value.startsWith(placeholder_template + "ws--") ||
+      current_line_value.startsWith(placeholder_template + "tab--")
+
     let subtrahend = 0
     const prev_line_data = convert.line[index - 1]
     const prev_line_value = prev_line_data?.value ?? "" // Use empty string if no prev line
@@ -135,59 +145,64 @@ const process = (html, config) => {
     indents = indents.substring(0, current_indent_level) // Adjust for *next* round
     const padding = step.repeat(current_indent_level)
 
-    /* Remove comment. */
-    if (strict && current_line_value.trim().startsWith("<!--"))
-      return
+    if (is_ignored_content) {
+      /* Stop processing this line, as it's set to be ignored. */
+      output_lines.push(current_line_value)
+    } else {
+      /* Remove comment. */
+      if (strict && current_line_value.trim().startsWith("<!--"))
+        return
 
-    let result = current_line_value
+      let result = current_line_value
 
-    if (
-      source.type === 'text' && 
-      content_wrap > 0 && 
-      result.length >= content_wrap
-    ) {
-      result = wordWrap(result, content_wrap, padding)
-    }
-    /* Wrap the attributes of open tags and void elements. */
-    else if (
-      tag_wrap > 0 &&
-      result.length > tag_wrap &&
-      tag_regex.test(result)
-    ) {
-      tag_regex.lastIndex = 0; // Reset stateful regex
-      attribute_regex.lastIndex = 0; // Reset stateful regex
+      if (
+        source.type === 'text' && 
+        content_wrap > 0 && 
+        result.length >= content_wrap
+      ) {
+        result = wordWrap(result, content_wrap, padding)
+      }
+      /* Wrap the attributes of open tags and void elements. */
+      else if (
+        tag_wrap > 0 &&
+        result.length > tag_wrap &&
+        tag_regex.test(result)
+      ) {
+        tag_regex.lastIndex = 0; // Reset stateful regex
+        attribute_regex.lastIndex = 0; // Reset stateful regex
 
-      const tag_parts = result.split(attribute_regex).filter(Boolean)
+        const tag_parts = result.split(attribute_regex).filter(Boolean)
 
-      if (tag_parts.length >= 2) {
-        const attributes = result.matchAll(attribute_regex)
-        const inner_padding = padding + step
-        let wrapped_tag = padding + tag_parts[0] + "\n"
+        if (tag_parts.length >= 2) {
+          const attributes = result.matchAll(attribute_regex)
+          const inner_padding = padding + step
+          let wrapped_tag = padding + tag_parts[0] + "\n"
 
-        for (const a of attributes) {
-          const attribute_string = a[0].trim()
-          wrapped_tag += inner_padding + attribute_string + "\n"
+          for (const a of attributes) {
+            const attribute_string = a[0].trim()
+            wrapped_tag += inner_padding + attribute_string + "\n"
+          }
+
+          const tag_name_match = tag_parts[0].match(/<([A-Za-z_:-]+)/)
+          const tag_name = tag_name_match ? tag_name_match[1] : ""
+          const is_void = VOID_ELEMENTS.includes(tag_name)
+          const closing_part = tag_parts[1].trim()
+          const closing_padding = padding + (strict && is_void ? " " : "") // Add space if void/strict
+
+          wrapped_tag += closing_padding + closing_part
+
+          result = wrapped_tag // Assign the fully wrapped string
+        } else {
+          result = padding + result
         }
-
-        const tag_name_match = tag_parts[0].match(/<([A-Za-z_:-]+)/)
-        const tag_name = tag_name_match ? tag_name_match[1] : ""
-        const is_void = VOID_ELEMENTS.includes(tag_name)
-        const closing_part = tag_parts[1].trim()
-        const closing_padding = padding + (strict && is_void ? " " : "") // Add space if void/strict
-
-        wrapped_tag += closing_padding + closing_part
-
-        result = wrapped_tag // Assign the fully wrapped string
       } else {
+        /* Apply simple indentation (if no wrapping occurred) */
         result = padding + result
       }
-    } else {
-      /* Apply simple indentation (if no wrapping occurred) */
-      result = padding + result
-    }
 
-    /* Add the processed line (or lines if wordWrap creates them) to the output */
-    output_lines.push(result)
+      /* Add the processed line (or lines if wordWrap creates them) to the output */
+      output_lines.push(result)
+    }
   })
 
   /* Join all processed lines into the final HTML string */
