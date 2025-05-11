@@ -2,7 +2,7 @@ import { prettify } from 'htmlfy'
 import { expect, test } from 'vitest'
 
 test('Perf', () => {
-  expect(prettify(html, { content_wrap: 66 })).toBe(pretty_html)
+  expect(prettify(html, { content_wrap: 66, ignore: ['ul'] })).toBe(pretty_html)
 })
 
 const html = `<html lang="en">

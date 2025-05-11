@@ -1,6 +1,6 @@
 {
 	"name": "htmlfy",
-	"version": "0.7.2",
+	"version": "0.7.3",
 	"description": "HTML formatter yo! Prettify, minify, and more!",
 	"scripts": {
 		"check": "tsc",
