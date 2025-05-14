@@ -1,9 +1,11 @@
 import { closify } from './closify.js'
 import { minify } from './minify.js'
 import { 
+  extractIgnoredBlocks,
   finalProtectContent,
   isHtml, 
   protectAttributes, 
+  reinsertIgnoredBlocks, 
   setIgnoreAttribute, 
   setIgnoreElement, 
   trimify, 
@@ -32,6 +34,11 @@ let trim
 const convert = {
   line: []
 }
+
+/**
+ * @type {Map<any,any>}
+ */
+let ignore_map
 
 /**
  * Isolate tags, content, and comments.
@@ -254,8 +261,12 @@ export const prettify = (html, config) => {
   const ignore = validated_config.ignore.length > 0
   trim = validated_config.trim
 
-  /* Preserve ignored elements. */
-  if (ignore) html = setIgnoreElement(html, validated_config)
+  /* Extract ignored elements. */
+  if (ignore) {
+    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html, validated_config);
+    html = html_with_markers
+    ignore_map = extracted_map
+  }
 
   /* Preserve html text within attribute values. */
   html = setIgnoreAttribute(html)
@@ -266,8 +277,10 @@ export const prettify = (html, config) => {
   /* Revert html text within attribute values. */
   html = unsetIgnoreAttribute(html)
 
-  /* Revert ignored elements. */
-  if (ignore) html = unsetIgnoreElement(html, validated_config)
+  /* Re-insert ignored elements. */
+  if (ignore) {
+    html = reinsertIgnoredBlocks(html, ignore_map)
+  }
 
   return html
 }
