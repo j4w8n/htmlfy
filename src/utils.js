@@ -462,3 +462,68 @@ export const wordWrap = (text, width, indent) => {
 
   return protectContent(result)
 }
+
+/**
+ * Extract any HTML blocks to be ignored,
+ * and replace them with a placeholder
+ * for re-insertion later.
+ * 
+ * @param {string} html 
+ * @param {import('htmlfy').Config} config 
+ * @returns {{  html_with_markers: string, extracted_map: Map<any,any> }}
+ */
+export function extractIgnoredBlocks(html, config) {
+  let current_html = html
+  const extracted_blocks = new Map()
+  let marker_id = 0
+  const MARKER_PREFIX = "___HTMLFY_SPECIAL_IGNORE_MARKER_"
+
+  for (const tag of config.ignore) {
+    /* Ensure tag is escaped if it can contain regex special chars. */
+    const safe_tag_name = tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")
+
+    const regex = new RegExp(
+      `<${safe_tag_name}[^>]*>.*?<\/${safe_tag_name}>`,
+      "gs" // global and dotAll
+    )
+
+    let match
+    const replacements = [] // Store [startIndex, endIndex, marker]
+
+    while ((match = regex.exec(current_html)) !== null) {
+      const marker = `${MARKER_PREFIX}${marker_id++}___`
+      extracted_blocks.set(marker, match[0]) // Store the full original match
+      replacements.push({
+        start: match.index,
+        end: regex.lastIndex,
+        marker: marker,
+      })
+    }
+
+    /* Apply replacements from the end to the beginning to keep indices valid. */
+    for (let i = replacements.length - 1; i >= 0; i--) {
+      const rep = replacements[i]
+      current_html =
+        current_html.substring(0, rep.start) +
+        rep.marker +
+        current_html.substring(rep.end)
+    }
+  }
+  return { html_with_markers: current_html, extracted_map: extracted_blocks }
+}
+
+/**
+ * Re-insert ignored HTML blocks.
+ * 
+ * @param {string} html_with_markers 
+ * @param {Map<any,any>} extracted_map 
+ * @returns 
+ */
+export function reinsertIgnoredBlocks(html_with_markers, extracted_map) {
+  let final_html = html_with_markers
+
+  for (const [marker, original_block] of extracted_map) {
+    final_html = final_html.split(marker).join(original_block)
+  }
+  return final_html
+}
