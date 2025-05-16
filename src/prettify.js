@@ -150,6 +150,25 @@ const process = (html, config) => {
     const current_indent_level = offset // Store the level for this line
 
     indents = indents.substring(0, current_indent_level) // Adjust for *next* round
+
+    /**
+     * Starts with a single punctuation character.
+     * Add punctuation to end of previous line.
+     * 
+     * TODO - Implement inline groups instead?
+     */
+    if (source.type === 'text' && /^[!,;\.]/.test(current_line_value)) {
+      if (current_line_value.length === 1) {
+        output_lines[output_lines.length - 1] = 
+          output_lines.at(-1) + current_line_value
+        return
+      } else {
+        output_lines[output_lines.length - 1] = 
+          output_lines.at(-1) + current_line_value.charAt(0)
+        current_line_value = current_line_value.slice(1).trim()
+      }
+    }
+
     const padding = step.repeat(current_indent_level)
 
     if (is_ignored_content) {

@@ -516,6 +516,14 @@ const pretty_leading_plaintext_sibling = `<mg-input-text
     <mg-icon icon="magnifying-glass"></mg-icon>
   </mg-button>
 </mg-input-text>`
+const surrounded_plaintext_sibling = `<div>The panda <i>eats</i>, <i>shoots</i>, and <i>leaves</i>.</div>`
+const pretty_surrounded_plaintext_sibling = `<div>
+  The panda
+  <i>eats</i>,
+  <i>shoots</i>,
+  and
+  <i>leaves</i>.
+</div>`
 
 const heavy_plaintext = `<div>Hello There World<br />Goodbye Now</div><div><i></i> Simmer<span>Down</span>Y'all </div>`
 const pretty_heavy_plaintext = `<div>
@@ -621,6 +629,11 @@ test('Trailing plaintext sibling', () => {
 test('Leading plaintext sibling', () => {
   // @ts-ignore // convert to number in v0.9.0
   expect(prettify(leading_plaintext_sibling, { tag_wrap: true })).toBe(pretty_leading_plaintext_sibling)
+})
+
+test('Surrounded plaintext sibling', () => {
+  // @ts-ignore // convert to number in v0.9.0
+  expect(prettify(surrounded_plaintext_sibling)).toBe(pretty_surrounded_plaintext_sibling)
 })
 
 test('Heavy plaintext nesting', () => {
