@@ -2,6 +2,7 @@
 	"name": "htmlfy",
 	"version": "0.7.5",
 	"description": "HTML formatter yo! Prettify, minify, and more!",
+	"main": "./src/exports/index.js",
 	"scripts": {
 		"check": "tsc",
 		"test": "vitest"
