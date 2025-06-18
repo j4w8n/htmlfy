@@ -1,15 +1,19 @@
 import { entify } from "./entify.js"
-import { isHtml } from "./utils.js"
+import { isHtml, validateConfig, extractIgnoredBlocks, reinsertIgnoredBlocks } from "./utils.js"
+import { CONFIG } from "./constants.js"
 
 /**
  * Creates a single-line HTML string
  * by removing line returns, tabs, and relevant spaces.
- * 
+ *
  * @param {string} html The HTML string to minify.
- * @param {boolean} check_html Check to see if the content contains any HTML, before processing.
+ * @param {import('htmlfy').UserConfig} [user_config]
  * @returns {string} A minified HTML string.
  */
-export const minify = (html, check_html = true) => {
+export const minify = (html, user_config) => {
+  const config = user_config ? validateConfig(user_config) : CONFIG
+  const { check_html } = config
+
   if (check_html && !isHtml(html)) return html
 
   /**
@@ -17,6 +21,10 @@ export const minify = (html, check_html = true) => {
    * before general minification.
    */
   html = entify(html)
+
+  /* Extract and protect content of ignored tags. */
+  const { html_with_markers, extracted_map } = extractIgnoredBlocks(html, config)
+  html = html_with_markers
 
   /* All other minification. */
   // Remove ALL newlines and tabs explicitly.
@@ -52,6 +60,9 @@ export const minify = (html, check_html = true) => {
 
   // Final trim for the whole string
   html = html.trim()
+
+  /* Re-insert protected content. */
+  html = reinsertIgnoredBlocks(html, extracted_map)
 
   return html
 }

@@ -551,7 +551,7 @@ const pretty_custom_heavy_plaintext = `<name:test>
   Y'all
 </link:test>`
 
-const content_wrap =  "<mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</mg-card>"
+const content_wrap = "<mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</mg-card>"
 const wrapped_content_wrap = `<mg-card>
   Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
   do eiusmod tempor incididunt ut labore et dolore magna
@@ -563,7 +563,7 @@ const wrapped_content_wrap = `<mg-card>
   deserunt mollit anim id est laborum.
 </mg-card>`
 
-const content_wrap_siblings =  "<div><mg-card></mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>"
+const content_wrap_siblings = "<div><mg-card></mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>"
 const wrapped_content_wrap_siblings = `<div>
   <mg-card></mg-card>
   Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
@@ -647,7 +647,7 @@ test('Custom elements with heavy plaintext nesting', () => {
 test('Trimify', () => {
   expect(trimify(trim_leading_whitespace, ['div'])).toBe('<div>Hello</div>')
   expect(trimify(trim_trailing_whitespace, ['div'])).toBe('<div>Hello</div>')
-  expect(prettify(entify_html, { trim: [ 'textarea' ]})).toBe(
+  expect(prettify(entify_html, { trim: ['textarea'] })).toBe(
     `<textarea>Did&nbsp;&nbsp;&nbsp;you&nbsp;know&nbsp;that&nbsp;3&nbsp;&gt;&nbsp;&nbsp;&nbsp;2?&#10;&#10;This&nbsp;is&nbsp;another&nbsp;paragraph.</textarea>
 <textarea class="more stuff"></textarea>`
   )
@@ -753,9 +753,36 @@ test('Minify', () => {
   )
 })
 
-test('Minify with HTML check', () => {
-  expect(minify('No HTML', true)).toBe('No HTML')
-})
+test('Minify preserves whitespace in pre, code, and textarea', () => {
+  const html_with_pre = `<pre>
+  This is preformatted text.
+    It should preserve
+      all whitespace.
+</pre>`;
+  const html_with_code = `<code>
+  const x = 10;
+  if (x > 5) {
+    console.log('Hello');
+  }
+</code>`;
+  const html_with_samp = `<samp>
+root
+|---- child
+      |---- child
+</samp>`;
+  const html_with_kbd = '<kbd>CTRL+C\nCTRL+V</kbd>';
+  const html_with_var = '<var>x</var>';
+  const html_with_tt = `<tt>Teletype paragraph
+text
+</tt>`;
+
+  expect(minify(html_with_pre)).toBe(html_with_pre);
+  expect(minify(html_with_code)).toBe(html_with_code);
+  expect(minify(html_with_samp)).toBe(html_with_samp);
+  expect(minify(html_with_kbd)).toBe(html_with_kbd);
+  expect(minify(html_with_var)).toBe(html_with_var);
+  expect(minify(html_with_tt)).toBe(html_with_tt);
+});
 
 test('Entify', () => {
   expect(entify(entify_html)).toBe(
@@ -775,7 +802,7 @@ test('Entify with minify', () => {
 
 test('Closify', () => {
   expect(closify(closify_html)).toBe(
-`<form id="3">
+    `<form id="3">
 <!-- This is a comment. -->
 <!-- This is a second comment. --><br /><input /><br /><input /><link:test></link:test></form>`
   )
@@ -786,16 +813,16 @@ test('Closify with HTML check', () => {
 })
 
 test('Ignore script tag', () => {
-  expect(prettify(script_html, { ignore: [ 'script' ] })).toBe(
-`<script>
+  expect(prettify(script_html, { ignore: ['script'] })).toBe(
+    `<script>
   document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')
 </script>`
   )
 })
 
 test('Ignore style tag', () => {
-  expect(prettify(css_html, { ignore: [ 'style' ]})).toBe(
-`<main>
+  expect(prettify(css_html, { ignore: ['style'] })).toBe(
+    `<main>
   <div>Hello World</div>
 </main>
 <style>
@@ -807,8 +834,8 @@ test('Ignore style tag', () => {
 })
 
 test('Ignore nested tags', () => {
-  expect(prettify(code_html, { ignore: [ 'pre', 'code' ]})).toBe(
-`<pre><code>// This is my code
+  expect(prettify(code_html, { ignore: ['pre', 'code'] })).toBe(
+    `<pre><code>// This is my code
 Please()
 {
   leave it alone
@@ -819,7 +846,7 @@ Please()
 
 test('Strict config', () => {
   expect(prettify(config_html, { strict: true })).toBe(
-`<form id="3">
+    `<form id="3">
   <div>
     <br>
     <input>
@@ -833,7 +860,7 @@ test('Strict config', () => {
 
 test('Tab size config', () => {
   expect(prettify(config_html, { tab_size: 4 })).toBe(
-`<form id="3">
+    `<form id="3">
     <!-- This is a comment. -->
     <!-- This is a second comment. -->
     <div>
@@ -848,8 +875,8 @@ test('Tab size config', () => {
 })
 
 test('Default ignore_with in HTML', () => {
-  expect(prettify(config_html_with_ignore_string, { ignore: ['p'], ignore_with: '!!-H--_-98'})).toBe(
-`<form id="3">
+  expect(prettify(config_html_with_ignore_string, { ignore: ['p'], ignore_with: '!!-H--_-98' })).toBe(
+    `<form id="3">
   <!-- This is a comment. -->
   <!-- This is a second comment. -->
   <div>
@@ -864,9 +891,9 @@ test('Default ignore_with in HTML', () => {
 })
 
 test('Catches invalid ignore config', async () => {
-  await expect(testConfig({ ignore: [ 'script', 1 ]})).rejects.toThrow('Ignore config must be an array of strings.')
+  await expect(testConfig({ ignore: ['script', 1] })).rejects.toThrow('Ignore config must be an array of strings.')
 })
 
 test('Catches invalid trim config', async () => {
-  await expect(testConfig({ trim: [ 'textarea', 1 ]})).rejects.toThrow('Trim config must be an array of strings.')
+  await expect(testConfig({ trim: ['textarea', 1] })).rejects.toThrow('Trim config must be an array of strings.')
 })

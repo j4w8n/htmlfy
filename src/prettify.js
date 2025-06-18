@@ -82,7 +82,7 @@ const preprocess = (html) => {
 
   if (trim.length > 0) html = trimify(html, trim)
 
-  html = minify(html, false)
+  html = minify(html, { check_html: false })
   html = enqueue(html)
 
   return html

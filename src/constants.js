@@ -3,13 +3,14 @@
  */
 export const CONFIG = {
   content_wrap: 0,
-  ignore: [],
+  ignore: ['pre', 'code', 'samp', 'kbd', 'var', 'tt'],
   ignore_with: '_!i-£___£%_',
   strict: false,
   tab_size: 2,
   tag_wrap: 0,
   tag_wrap_width: 80,
-  trim: []
+  trim: [],
+  check_html: true
 }
 
 export const CONTENT_IGNORE_STRING = '__!i-£___£%__'
