@@ -1,16 +1,36 @@
 import { entify } from "./entify.js"
-import { isHtml } from "./utils.js"
+import { extractIgnoredBlocks, isHtml, reinsertIgnoredBlocks, validateConfig } from "./utils.js"
+import { getState } from "./state.js"
+
+/**
+ * @type {Map<any,any>}
+ */
+let ignore_map
 
 /**
  * Creates a single-line HTML string
  * by removing line returns, tabs, and relevant spaces.
  * 
  * @param {string} html The HTML string to minify.
- * @param {boolean} check_html Check to see if the content contains any HTML, before processing.
+ * @param {import('htmlfy').UserConfig} [config] A user configuration object.
  * @returns {string} A minified HTML string.
  */
-export const minify = (html, check_html = true) => {
-  if (check_html && !isHtml(html)) return html
+export const minify = (html, config) => {
+  let reinsert_ignored = false
+  const { checked_html, ignored } = getState()
+
+  if (!checked_html && !isHtml(html)) return html
+
+  const validated_config = config ? validateConfig(config) : (getState()).config
+  const ignore = validated_config.ignore.length > 0
+
+  /* Extract ignored elements. Skipped if prettify has already ignored blocks. */
+  if (!ignored && ignore) {
+    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html, validated_config);
+    html = html_with_markers
+    ignore_map = extracted_map
+    reinsert_ignored = true
+  }
 
   /**
    * Ensure textarea content is specially minified and protected
@@ -52,6 +72,11 @@ export const minify = (html, check_html = true) => {
 
   // Final trim for the whole string
   html = html.trim()
+
+  /* Re-insert ignored elements. Skipped unless minify did the ignore. */
+  if (reinsert_ignored) {
+    html = reinsertIgnoredBlocks(html, ignore_map)
+  }
 
   return html
 }
