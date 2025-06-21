@@ -3,7 +3,7 @@ import { CONFIG } from "./constants.js"
 /**
  * @typedef {object} State
  * @property {boolean} checked_html - If passed in HTML has been checked for HTML within it.
- * @property {import("htmlfy").Config} config - User configuration object.
+ * @property {import("htmlfy").Config} config - Validated configuration.
  * @property {boolean} ignored
  */
 
@@ -12,7 +12,7 @@ import { CONFIG } from "./constants.js"
  */
 const state = {
   checked_html: false,
-  config: CONFIG,
+  config: { ...CONFIG },
   ignored: false
 }
 
