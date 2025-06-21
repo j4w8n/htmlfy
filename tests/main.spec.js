@@ -754,7 +754,38 @@ test('Minify', () => {
 })
 
 test('Minify with HTML check', () => {
-  expect(minify('No HTML', true)).toBe('No HTML')
+  expect(minify('No HTML')).toBe('No HTML')
+})
+
+test('Minify preserves whitespace in pre, code, and textarea', () => {
+  const html_with_pre = `<pre>
+  This is preformatted text.
+    It should preserve
+      all whitespace.
+</pre>`
+  const html_with_code = `<code>
+  const x = 10;
+  if (x > 5) {
+    console.log('Hello');
+  }
+</code>`
+  const html_with_samp = `<samp>
+root
+|---- child
+      |---- child
+</samp>`
+  const html_with_kbd = '<kbd>CTRL+C\nCTRL+V</kbd>'
+  const html_with_var = '<var>x</var>'
+  const html_with_tt = `<tt>Teletype paragraph
+text
+</tt>`
+
+  expect(minify(html_with_pre, { ignore: [ 'pre' ] })).toBe(html_with_pre)
+  expect(minify(html_with_code, { ignore: [ 'code' ] })).toBe(html_with_code)
+  expect(minify(html_with_samp, { ignore: [ 'samp' ] })).toBe(html_with_samp)
+  expect(minify(html_with_kbd, { ignore: [ 'kbd' ] })).toBe(html_with_kbd)
+  expect(minify(html_with_var, { ignore: [ 'var' ] })).toBe(html_with_var)
+  expect(minify(html_with_tt, { ignore: [ 'tt' ] })).toBe(html_with_tt)
 })
 
 test('Entify', () => {
@@ -782,7 +813,7 @@ test('Closify', () => {
 })
 
 test('Closify with HTML check', () => {
-  expect(closify('No HTML', true)).toBe('No HTML')
+  expect(closify('No HTML')).toBe('No HTML')
 })
 
 test('Ignore script tag', () => {

@@ -1,4 +1,5 @@
 import { IGNORE_STRING, CONFIG, CONTENT_IGNORE_STRING } from './constants.js'
+import { setState } from './state.js'
 
 /**
  * Checks if content contains at least one HTML element or custom HTML element.
@@ -22,10 +23,13 @@ import { IGNORE_STRING, CONFIG, CONTENT_IGNORE_STRING } from './constants.js'
  * @param {string} content Content to evaluate.
  * @returns {boolean} A boolean.
  */
-export const isHtml = (content) => 
-  /<(?:[A-Za-z]+[A-Za-z0-9]*)(?:\s+.*?)*?\/{0,1}>/.test(content) ||
+export const isHtml = (content) => {
+  setState({ checked_html: true })
+
+  return /<(?:[A-Za-z]+[A-Za-z0-9]*)(?:\s+.*?)*?\/{0,1}>/.test(content) ||
   /<(?<Element>(?:[A-Za-z]+[A-Za-z0-9]*:)?(?:[A-Za-z]+[A-Za-z0-9]*))(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content) || 
   /<(?<Element>(?:[a-z][a-z0-9._]*:)?[a-z][a-z0-9._]*-[a-z0-9._-]+)(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content)
+}
 
 /**
  * Generic utility which merges two objects.
@@ -63,16 +67,14 @@ const mergeObjects = (current, updates) => {
 /**
  * Merge a user config with the default config.
  * 
- * @param {import('htmlfy').Config} dconfig The default config.
+ * @param {import('htmlfy').Config} default_config The default config.
  * @param {import('htmlfy').UserConfig} config The user config.
  * @returns {import('htmlfy').Config}
  */
-export const mergeConfig = (dconfig, config) => {
-  /**
-   * We need to make a deep copy of `dconfig`,
-   * otherwise we end up altering the original `CONFIG` because `dconfig` is a reference to it.
-   */
-  return mergeObjects(structuredClone(dconfig), config)
+export const mergeConfig = (default_config, config) => {
+  const validated_config = mergeObjects(default_config, config)
+  setState({ config: validated_config })
+  return validated_config
 }
 
 /**
@@ -337,6 +339,8 @@ export const unsetIgnoreElement = (html, config) => {
  */
 export const validateConfig = (config) => {
   if (typeof config !== 'object') throw new Error('Config must be an object.')
+  
+  const default_config = { ...CONFIG }
 
   const config_empty = !(
     Object.hasOwn(config, 'content_wrap') ||
@@ -349,7 +353,10 @@ export const validateConfig = (config) => {
     Object.hasOwn(config, 'trim')
   )
 
-  if (config_empty) return CONFIG
+  if (config_empty) {
+    setState({ config: default_config })
+    return default_config
+  }
 
   let tab_size = config.tab_size
 
@@ -387,7 +394,7 @@ export const validateConfig = (config) => {
     if (config.tag_wrap_width)
       config.tag_wrap = config.tag_wrap_width
     else
-      config.tag_wrap = CONFIG.tag_wrap_width
+      config.tag_wrap = default_config.tag_wrap_width
   }
   
   if (Object.hasOwn(config, 'tag_wrap') && typeof config.tag_wrap !== 'number')
@@ -404,7 +411,7 @@ export const validateConfig = (config) => {
   if (Object.hasOwn(config, 'trim') && (!Array.isArray(config.trim) || !config.trim?.every((e) => typeof e === 'string')))
     throw new Error('Trim config must be an array of strings.')
 
-  return mergeConfig(CONFIG, config)
+  return mergeConfig(default_config, config)
 
 }
 
@@ -473,6 +480,7 @@ export const wordWrap = (text, width, indent) => {
  * @returns {{  html_with_markers: string, extracted_map: Map<any,any> }}
  */
 export function extractIgnoredBlocks(html, config) {
+  setState({ ignored: true })
   let current_html = html
   const extracted_blocks = new Map()
   let marker_id = 0
@@ -520,6 +528,7 @@ export function extractIgnoredBlocks(html, config) {
  * @returns 
  */
 export function reinsertIgnoredBlocks(html_with_markers, extracted_map) {
+  setState({ ignored: false })
   let final_html = html_with_markers
 
   for (const [marker, original_block] of extracted_map) {

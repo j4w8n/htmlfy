@@ -7,26 +7,15 @@ import {
   protectAttributes, 
   reinsertIgnoredBlocks, 
   setIgnoreAttribute, 
-  setIgnoreElement, 
   trimify, 
   unprotectAttributes, 
   unprotectContent, 
   unsetIgnoreAttribute, 
-  unsetIgnoreElement, 
   validateConfig, 
   wordWrap
 } from './utils.js'
 import { CONFIG, VOID_ELEMENTS } from './constants.js'
-
-/**
- * @type {boolean}
- */
-let strict
-
-/**
- * @type {string[]}
- */
-let trim
+import { getState } from './state.js'
 
 /**
  * @type {{ line: Record<string,string>[] }}
@@ -78,11 +67,13 @@ const enqueue = (html) => {
  * @returns {string}
  */
 const preprocess = (html) => {
-  html = closify(html, false)
+  html = closify(html)
 
-  if (trim.length > 0) html = trimify(html, trim)
+  const { config } = getState()
 
-  html = minify(html, false)
+  if (config.trim.length > 0) html = trimify(html, config.trim)
+
+  html = minify(html)
   html = enqueue(html)
 
   return html
@@ -90,16 +81,16 @@ const preprocess = (html) => {
 
 /**
  * 
- * @param {string} html The HTML string to process.
  * @param {import('htmlfy').Config} config 
  * @returns {string}
  */
-const process = (html, config) => {
+const process = (config) => {
   const step = " ".repeat(config.tab_size)
   const tag_wrap = config.tag_wrap
   const content_wrap = config.content_wrap
   const ignore_with = config.ignore_with
   const placeholder_template = `-${ignore_with}`
+  const strict = config.strict
 
   /* Track current number of indentations needed. */
   let indents = ''
@@ -271,33 +262,34 @@ const process = (html, config) => {
  * @returns {string} A well-formed HTML string.
  */
 export const prettify = (html, config) => {
+  let reinsert_ignored = false
+  const { checked_html, ignored } = getState()
+
   /* Return content as-is if it does not contain any HTML elements. */
-  if (!isHtml(html)) return html
+  if (!checked_html && !isHtml(html)) return html
 
-  const validated_config = config ? validateConfig(config) : CONFIG
-  strict = validated_config.strict
-
+  const validated_config = config ? validateConfig(config) : { ...CONFIG }
   const ignore = validated_config.ignore.length > 0
-  trim = validated_config.trim
 
   /* Extract ignored elements. */
-  if (ignore) {
+  if (!ignored && ignore) {
     const { html_with_markers, extracted_map } = extractIgnoredBlocks(html, validated_config);
     html = html_with_markers
     ignore_map = extracted_map
+    reinsert_ignored = true
   }
 
   /* Preserve html text within attribute values. */
   html = setIgnoreAttribute(html)
 
   html = preprocess(html)
-  html = process(html, validated_config)
+  html = process(validated_config)
 
   /* Revert html text within attribute values. */
   html = unsetIgnoreAttribute(html)
 
   /* Re-insert ignored elements. */
-  if (ignore) {
+  if (reinsert_ignored) {
     html = reinsertIgnoredBlocks(html, ignore_map)
   }
 
