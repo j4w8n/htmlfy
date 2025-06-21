@@ -121,7 +121,7 @@ const { prettify } = require('htmlfy')
 ```
 
 ## Configuration
-These configuration options can only be passed to `prettify`.
+These configuration options can be passed to `prettify` or `minify`. Note that as of now, only the `ignore` and `ignore_with` are relevant for `minify`.
 
 Default config:
 ```js
