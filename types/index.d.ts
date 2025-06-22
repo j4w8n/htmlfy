@@ -16,11 +16,10 @@ declare module 'htmlfy' {
    * Ensure void elements are "self-closing".
    *
    * @param {string} html The HTML string to evaluate.
-   * @param {boolean} [html_check] Check to see if the content contains any HTML, before processing. Defaults to `true`.
    * @returns An HTML string where void elements are formatted as self-closing.
    * @example <br> => <br />
    */
-  export function closify(html: string, html_check?: boolean): string
+  export function closify(html: string): string
 
   /**
    * Enforce entity characters for textarea content.
@@ -41,10 +40,10 @@ declare module 'htmlfy' {
    * by removing line returns, tabs, and relevant spaces.
    * 
    * @param {string} html The HTML string to minify.
-   * @param {boolean} [html_check] Check to see if the content contains any HTML, before processing. Defaults to `true`.
+   * @param {UserConfig} [config] A user configuration object.
    * @returns A minified HTML string.
    */
-  export function minify(html: string, html_check?: boolean): string
+  export function minify(html: string, config?: UserConfig): string
 
   /**
    * Format HTML with line returns and indentations.
