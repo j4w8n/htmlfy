@@ -1,4 +1,3 @@
-import { closify } from './closify.js'
 import { minify } from './minify.js'
 import { 
   extractIgnoredBlocks,
@@ -7,6 +6,8 @@ import {
   protectAttributes, 
   reinsertIgnoredBlocks, 
   setIgnoreAttribute, 
+  setSelfClosing, 
+  unsetSelfClosing, 
   trimify, 
   unprotectAttributes, 
   unprotectContent, 
@@ -14,7 +15,7 @@ import {
   validateConfig, 
   wordWrap
 } from './utils.js'
-import { CONFIG, VOID_ELEMENTS } from './constants.js'
+import { CONFIG, SELF_CLOSING_PLACEHOLDER, VOID_ELEMENTS } from './constants.js'
 import { getState } from './state.js'
 
 /**
@@ -67,8 +68,6 @@ const enqueue = (html) => {
  * @returns {string}
  */
 const preprocess = (html) => {
-  html = closify(html)
-
   const { config } = getState()
 
   if (config.trim.length > 0) html = trimify(html, config.trim)
@@ -128,8 +127,12 @@ const process = (config) => {
     if (prev_line_value.trim().startsWith("<!doctype")) subtrahend++
     /* prevLine is a comment. */
     if (prev_line_value.trim().startsWith("<!--")) subtrahend++
-    /* prevLine is a self-closing tag. */
-    if (prev_line_value.trim().endsWith("/>")) subtrahend++
+    /* prevLine is a void element. */
+    if (
+      prev_line_value.trim().endsWith("/>") // native self-closing
+      ||
+      prev_line_value.trim().endsWith(SELF_CLOSING_PLACEHOLDER) // synthetic self-closing
+    ) subtrahend++
     /* prevLine is a closing tag. */
     if (prev_line_value.trim().startsWith("</")) subtrahend++
     /* prevLine is text. */
@@ -145,8 +148,6 @@ const process = (config) => {
     /**
      * Starts with a single punctuation character.
      * Add punctuation to end of previous line.
-     * 
-     * TODO - Implement inline groups instead?
      */
     if (source.type === 'text' && /^[!,;\.]/.test(current_line_value)) {
       if (current_line_value.length === 1) {
@@ -171,6 +172,9 @@ const process = (config) => {
         return
 
       let result = current_line_value
+
+      /* Remove self-closing placeholder, if needed. */
+      result = unsetSelfClosing(result)
 
       if (
         source.type === 'text' && 
@@ -202,9 +206,9 @@ const process = (config) => {
 
           const tag_name_match = tag_parts[0].match(/<([A-Za-z_:-]+)/)
           const tag_name = tag_name_match ? tag_name_match[1] : ""
-          const is_void = VOID_ELEMENTS.includes(tag_name)
+          const is_self_closing = tag_parts.at(-1)?.endsWith("/>") && VOID_ELEMENTS.includes(tag_name)
           const closing_part = tag_parts[1].trim()
-          const closing_padding = padding + (strict && is_void ? " " : "") // Add space if void/strict
+          const closing_padding = padding + (strict && is_self_closing ? " " : "")
 
           wrapped_tag += closing_padding + closing_part
 
@@ -234,8 +238,15 @@ const process = (config) => {
 
   /* Remove line returns, tabs, and consecutive spaces within html elements or their content. */
   final_html = final_html.replace(
-    /<(?<Element>.+).*>[^<]*?[^><\/\s][^<]*?<\/{1}\k<Element>|<script[^>]*>\s+<\/script>|<(\w+)>\s+<\/(\w+)|<(?:([\w:\._-]+)|([\w:\._-]+)[^>]*[^\/])>\s+<\/([\w:\._-]+)>/g,
-    match => match.replace(/\n|\t|\s{2,}/g, '')
+    /<(?<Element>[^>\s]+)[^>]*>[^<]*?[^><\/\s][^<]*?<\/\k<Element>>|<script[^>]*>[\s]*<\/script>|<([\w:\._-]+)([^>]*)><\/\2>|<([\w:\._-]+)([^>]*)>[\s]+<\/\4>/g,
+    match => {
+      // Check if this contains placeholder
+      if (match.includes(SELF_CLOSING_PLACEHOLDER)) {
+        return match // Don't modify if it contains the placeholder
+      }
+
+      return match.replace(/\n|\t|\s{2,}/g, '')
+    }
   )
 
   /* Revert wrapped content. */
@@ -281,6 +292,9 @@ export const prettify = (html, config) => {
 
   /* Preserve html text within attribute values. */
   html = setIgnoreAttribute(html)
+
+  /* Insert placeholder for void elements that aren't self-closing. */
+  html = setSelfClosing(html)
 
   html = preprocess(html)
   html = process(validated_config)

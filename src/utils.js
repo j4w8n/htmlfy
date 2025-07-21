@@ -1,4 +1,4 @@
-import { IGNORE_STRING, CONFIG, CONTENT_IGNORE_STRING } from './constants.js'
+import { IGNORE_STRING, CONFIG, CONTENT_IGNORE_STRING, VOID_ELEMENTS, SELF_CLOSING_PLACEHOLDER } from './constants.js'
 import { setState } from './state.js'
 
 /**
@@ -535,4 +535,31 @@ export function reinsertIgnoredBlocks(html_with_markers, extracted_map) {
     final_html = final_html.split(marker).join(original_block)
   }
   return final_html
+}
+
+const void_element_regex = new RegExp(`<(${VOID_ELEMENTS.join("|")})(?:\\s(?:[^/>]|/(?!>))*)*>`, 'g')
+
+/**
+ * Add a placeholder for void elements that are not self-closing.
+ * This is for internal processing only.
+ * 
+ * @param {string} html 
+ * @returns 
+ */
+export function setSelfClosing(html) {
+  return html.replace(
+    // match only void elements that are not self-closing
+    void_element_regex,
+    match => match.replace(/>$/, SELF_CLOSING_PLACEHOLDER)
+  )
+}
+
+/**
+ * Remove internal placeholder for non-native self-closing void elements.
+ * 
+ * @param {string} html 
+ * @returns 
+ */
+export function unsetSelfClosing(html) {
+  return html.replace(SELF_CLOSING_PLACEHOLDER, ">")
 }

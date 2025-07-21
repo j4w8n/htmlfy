@@ -13,6 +13,7 @@ export const CONFIG = {
 }
 
 export const CONTENT_IGNORE_STRING = '__!i-£___£%__'
+export const SELF_CLOSING_PLACEHOLDER = '__!//-£___£%//__>'
 export const IGNORE_STRING = '!i-£___£%_'
 
 export const VOID_ELEMENTS = [

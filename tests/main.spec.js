@@ -41,21 +41,21 @@ const pretty_html = `<form id="3">
   <!-- This is a comment. -->
   <!-- This is a second comment. -->
   <label for="email-0">What's your email?</label>
-  <input id="email-0" type="email" title="We need your email for verification." name="email" required />
+  <input id="email-0" type="email" title="We need your email for verification." name="email" required>
   <!-- This is another comment. -->
   <label for="1">What fruits do you like?</label>
   <fieldset id="1">
-    <input id="fruits-1-0" type="checkbox" name="fruits" value="apples" />
+    <input id="fruits-1-0" type="checkbox" name="fruits" value="apples">
     <label for="fruits-1-0">Apples</label>
-    <br />
+    <br>
     <div>
       <!-- This is an embedded comment. -->
     </div>
-    <input id="fruits-1-1" type="checkbox" name="fruits" value="grapes" />
+    <input id="fruits-1-1" type="checkbox" name="fruits" value="grapes">
     <label for="fruits-1-1">Grapes</label>
-    <br />
+    <br>
   </fieldset>
-  <br />
+  <br>
   <name:test></name:test>
   <link:test>
     <div>Hello There</div>
@@ -138,21 +138,21 @@ const pretty_wrapped_html = `<form id="3">
     title="We need your email for verification."
     name="email"
     required
-  />
+  >
   <!-- This is another comment. -->
   <label for="1">What fruits do you like?</label>
   <fieldset id="1">
-    <input id="fruits-1-0" type="checkbox" name="fruits" value="apples" />
+    <input id="fruits-1-0" type="checkbox" name="fruits" value="apples">
     <label for="fruits-1-0">Apples</label>
-    <br />
+    <br>
     <div>
       <!-- This is an embedded comment. -->
     </div>
-    <input id="fruits-1-1" type="checkbox" name="fruits" value="grapes" />
+    <input id="fruits-1-1" type="checkbox" name="fruits" value="grapes">
     <label for="fruits-1-1">Grapes</label>
-    <br />
+    <br>
   </fieldset>
-  <br />
+  <br>
   <name:test></name:test>
   <link:test>
     <div>Hello There</div>
@@ -195,21 +195,21 @@ const pretty_wrapped_tab4_html = `<form id="3">
         title="We need your email for verification."
         name="email"
         required
-    />
+    >
     <!-- This is another comment. -->
     <label for="1">What fruits do you like?</label>
     <fieldset id="1">
-        <input id="fruits-1-0" type="checkbox" name="fruits" value="apples" />
+        <input id="fruits-1-0" type="checkbox" name="fruits" value="apples">
         <label for="fruits-1-0">Apples</label>
-        <br />
+        <br>
         <div>
             <!-- This is an embedded comment. -->
         </div>
-        <input id="fruits-1-1" type="checkbox" name="fruits" value="grapes" />
+        <input id="fruits-1-1" type="checkbox" name="fruits" value="grapes">
         <label for="fruits-1-1">Grapes</label>
-        <br />
+        <br>
     </fieldset>
-    <br />
+    <br>
     <name:test></name:test>
     <link:test>
         <div>Hello There</div>
@@ -366,7 +366,7 @@ const standalone_pretty_input_wrap = `<input
   type="checkbox"
   name="fruits"
   value="apples"
-/>`
+>`
 
 const attribute_with_html_crazy_name = '<cus---t0m...element___ boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>."></cus---t0m...element___>'
 const attribute_with_html_crazy_name_tag_wrap = '<cus---t0m...element___ boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>."></cus---t0m...element___>'
@@ -749,7 +749,7 @@ test('Elements with multiple standalone attributes and tag wrap', () => {
 
 test('Minify', () => {
   expect(minify(pretty_html)).toBe(
-    `<form id="3"><!-- This is a comment. --><!-- This is a second comment. --><label for="email-0">What's your email?</label><input id="email-0" type="email" title="We need your email for verification." name="email" required /><!-- This is another comment. --><label for="1">What fruits do you like?</label><fieldset id="1"><input id="fruits-1-0" type="checkbox" name="fruits" value="apples" /><label for="fruits-1-0">Apples</label><br /><div><!-- This is an embedded comment. --></div><input id="fruits-1-1" type="checkbox" name="fruits" value="grapes" /><label for="fruits-1-1">Grapes</label><br /></fieldset><br /><name:test></name:test><link:test><div>Hello There</div></link:test><custom-element class="hello there world" style="margin-top: 12px; margin-left: 12px;"><div>Goodbye World</div></custom-element></form><link:test>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</link:test><mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</mg-card>`
+    `<form id="3"><!-- This is a comment. --><!-- This is a second comment. --><label for="email-0">What's your email?</label><input id="email-0" type="email" title="We need your email for verification." name="email" required><!-- This is another comment. --><label for="1">What fruits do you like?</label><fieldset id="1"><input id="fruits-1-0" type="checkbox" name="fruits" value="apples"><label for="fruits-1-0">Apples</label><br><div><!-- This is an embedded comment. --></div><input id="fruits-1-1" type="checkbox" name="fruits" value="grapes"><label for="fruits-1-1">Grapes</label><br></fieldset><br><name:test></name:test><link:test><div>Hello There</div></link:test><custom-element class="hello there world" style="margin-top: 12px; margin-left: 12px;"><div>Goodbye World</div></custom-element></form><link:test>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</link:test><mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</mg-card>`
   )
 })
 
