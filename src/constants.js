@@ -4,7 +4,7 @@
 export const CONFIG = {
   content_wrap: 0,
   ignore: [],
-  ignore_with: '!i-£___£%',
+  ignore_with: '!i-£___£%_',
   strict: false,
   tab_size: 2,
   tag_wrap: 0,

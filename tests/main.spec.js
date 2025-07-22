@@ -925,7 +925,7 @@ test('Catches invalid ignore config', async () => {
 })
 
 test('Catches invalid ignore_with config', async () => {
-  await expect(testConfig({ ignore_with: '_hello_'})).rejects.toThrow('ignore_with cannot start or end with an underscore.')
+  await expect(testConfig({ ignore_with: '_hello_'})).rejects.toThrow('ignore_with cannot start with an underscore.')
 })
 
 test('Catches invalid trim config', async () => {

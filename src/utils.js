@@ -80,7 +80,7 @@ export const mergeConfig = (default_config, config) => {
     constants: {
       CONTENT_IGNORE_PLACEHOLDER: `${validated_config.ignore_with}_`,
       SELF_CLOSING_PLACEHOLDER: `${validated_config.ignore_with}/_>`,
-      ATTRIBUTE_IGNORE_PLACEHOLDER: `${validated_config.ignore_with}`
+      ATTRIBUTE_IGNORE_PLACEHOLDER: `${validated_config.ignore_with}=_`
     }
   })
   return validated_config
@@ -274,7 +274,6 @@ export const validateConfig = (config) => {
     Object.hasOwn(config, 'strict') || 
     Object.hasOwn(config, 'tab_size') || 
     Object.hasOwn(config, 'tag_wrap') || 
-    Object.hasOwn(config, 'tag_wrap_width') || 
     Object.hasOwn(config, 'trim')
   )
 
@@ -310,12 +309,13 @@ export const validateConfig = (config) => {
   if (Object.hasOwn(config, 'ignore_with')) {
     if (typeof config.ignore_with !== 'string')
       throw new Error(`ignore_with must be a string, not ${typeof config.ignore_with}.`)
-    else if (config.ignore_with.startsWith('_') || config.ignore_with.endsWith('_'))
+    else if (config.ignore_with.startsWith('_'))
       /**
        * This negatively affects processing of preserved tag attributes,
-       * but I'm not sure why.
+       * because tag names can end with an underscore, so the regex
+       * does not capture them.
        */
-      throw new Error(`ignore_with cannot start or end with an underscore.`)
+      throw new Error(`ignore_with cannot start with an underscore.`)
   }
 
   if (Object.hasOwn(config, 'strict') && typeof config.strict !== 'boolean')

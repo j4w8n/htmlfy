@@ -26,7 +26,7 @@ const state = {
   constants: {
     CONTENT_IGNORE_PLACEHOLDER: `${CONFIG.ignore_with}_`,
     SELF_CLOSING_PLACEHOLDER: `${CONFIG.ignore_with}/_>`,
-    ATTRIBUTE_IGNORE_PLACEHOLDER: `${CONFIG.ignore_with}`
+    ATTRIBUTE_IGNORE_PLACEHOLDER: `${CONFIG.ignore_with}=_`
   }
 }
 
