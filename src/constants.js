@@ -8,7 +8,6 @@ export const CONFIG = {
   strict: false,
   tab_size: 2,
   tag_wrap: 0,
-  tag_wrap_width: 80,
   trim: []
 }
 
