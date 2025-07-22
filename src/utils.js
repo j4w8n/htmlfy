@@ -1,4 +1,4 @@
-import { IGNORE_STRING, CONFIG, CONTENT_IGNORE_STRING, VOID_ELEMENTS, SELF_CLOSING_PLACEHOLDER } from './constants.js'
+import { ATTRIBUTE_IGNORE_STRING, CONFIG, CONTENT_IGNORE_STRING, VOID_ELEMENTS, SELF_CLOSING_PLACEHOLDER } from './constants.js'
 import { setState } from './state.js'
 
 /**
@@ -85,9 +85,9 @@ export const protectAttributes = (html) => {
   html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
     return match.replace(capture, (match) => {
       return match
-        .replace(/\n/g, IGNORE_STRING + 'nl!')
-        .replace(/\r/g, IGNORE_STRING + 'cr!')
-        .replace(/\s/g, IGNORE_STRING + 'ws!')
+        .replace(/\n/g, ATTRIBUTE_IGNORE_STRING + 'nl!')
+        .replace(/\r/g, ATTRIBUTE_IGNORE_STRING + 'cr!')
+        .replace(/\s/g, ATTRIBUTE_IGNORE_STRING + 'ws!')
     })
   })
 
@@ -139,78 +139,11 @@ export const setIgnoreAttribute = (html) => {
   html = html.replace(regex, (/** @type {string} */match, p1, p2) => {
     return match.replace(p2, (match) => {
       return match
-        .replace(/</g, IGNORE_STRING + 'lt!')
-        .replace(/>/g, IGNORE_STRING + 'gt!')
+        .replace(/</g, ATTRIBUTE_IGNORE_STRING + 'lt!')
+        .replace(/>/g, ATTRIBUTE_IGNORE_STRING + 'gt!')
     })
   })
   
-  return html
-}
-
-/**
- * @typedef {"<" | ">" | "\n" | "\r" | " " | "\t"} ReplacementKey
- * Defines the possible keys for the replacements object.
- */
-
-/**
- * Replace entities with ignore string.
- * 
- * @param {string} html 
- * @param {import('htmlfy').Config} config
- * @returns {string}
- */
-export const setIgnoreElement = (html, config) => {
-  const ignore = config.ignore
-  const ignore_string = config.ignore_with
-
-  /* Pre-create replacement map for faster lookup. */
-  const replacements = {
-    "<": "-" + ignore_string + "lt-",
-    ">": "-" + ignore_string + "gt-",
-    "\n": "-" + ignore_string + "nl-",
-    "\r": "-" + ignore_string + "cr-",
-    " ": "-" + ignore_string + "ws-", // Use space ' ' as key
-    "\t": "-" + ignore_string + "tab-", // Use tab '\t' as key (add placeholder if needed)
-    // Add other specific whitespace chars like \v, \f if necessary
-  }
-  /* Regex to match any character we need to replace inside the ignored content. */
-  const charReplaceRegex = /[<>\n\r \t]/g
-
-  for (let e = 0; e < ignore.length; e++) {
-    const tagName = ignore[e].replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
-    const regex = new RegExp(
-      `<${tagName}[^>]*>(.*?)<\/${tagName}>`,
-      "gs" // Use 'g' (global) and 's' (dotAll) flags
-    );
-
-    html = html.replace(
-      regex,
-      (/** @type {string} */ fullMatch, /** @type {string} */ capture) => {
-        const processedCapture = capture.replace(
-          charReplaceRegex,
-          (/** @type {string} */ char) => {
-            return replacements[/** @type {ReplacementKey} */ (char)] // Return the placeholder
-            // Or safer if map might be incomplete: return replacements[char] || char
-          }
-        );
-
-        /* Reconstruct the string using original tags and processed content. */
-        const openingTagEnd = fullMatch.indexOf(">") + 1
-        const closingTagStart = fullMatch.lastIndexOf(`</${tagName}>`)
-
-        /* Check if tags were found (basic sanity check). */
-        if (openingTagEnd > 0 && closingTagStart > 0) {
-          const openingTag = fullMatch.substring(0, openingTagEnd)
-          const closingTag = fullMatch.substring(closingTagStart)
-          return openingTag + processedCapture + closingTag
-        } else {
-          // Should not happen with valid HTML and correct regex
-          // Return original match to avoid breaking things further
-          return fullMatch
-        }
-      }
-    )
-  }
   return html
 }
 
@@ -243,9 +176,9 @@ export const unprotectAttributes = (html) => {
   html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
     return match.replace(capture, (match) => {
       return match
-        .replace(new RegExp(IGNORE_STRING + 'nl!', "g"), '\n')
-        .replace(new RegExp(IGNORE_STRING + 'cr!', "g"), '\r')
-        .replace(new RegExp(IGNORE_STRING + 'ws!', "g"), ' ')
+        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'nl!', "g"), '\n')
+        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'cr!', "g"), '\r')
+        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'ws!', "g"), ' ')
     })
   })
 
@@ -269,7 +202,7 @@ export const unprotectContent = (html) => {
   return html
 }
 
-const escapedIgnoreString = IGNORE_STRING.replace(
+const escapedIgnoreString = ATTRIBUTE_IGNORE_STRING.replace(
   /[-\/\\^$*+?.()|[\]{}]/g,
   "\\$&"
 );
@@ -301,34 +234,6 @@ export const unsetIgnoreAttribute = (html) => {
       return `<${tagName}${processedAttributes}>`
     }
   )
-}
-
-/**
- * Replace ignore string with entities.
- * 
- * @param {string} html 
- * @param {import('htmlfy').Config} config
- * @returns {string}
- */
-export const unsetIgnoreElement = (html, config) => {
-  const ignore = config.ignore
-  const ignore_string = config.ignore_with
-
-  for (let e = 0; e < ignore.length; e++) {
-    const regex = new RegExp(`<${ignore[e]}[^>]*>((.|\n)*?)<\/${ignore[e]}>`, "g")
-
-    html = html.replace(regex, (/** @type {string} */match, /** @type {any} */capture) => {
-      return match.replace(capture, (match) => {
-        return match
-          .replace(new RegExp('-' + ignore_string + 'lt-', "g"), '<')
-          .replace(new RegExp('-' + ignore_string + 'gt-', "g"), '>')
-          .replace(new RegExp('-' + ignore_string + 'nl-', "g"), '\n')
-          .replace(new RegExp('-' + ignore_string + 'cr-', "g"), '\r')
-          .replace(new RegExp('-' + ignore_string + 'ws-', "g"), ' ')
-      })
-    })
-  }
-  return html
 }
 
 /**

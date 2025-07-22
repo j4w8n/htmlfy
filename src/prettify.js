@@ -83,8 +83,6 @@ const process = (config) => {
   const step = " ".repeat(config.tab_size)
   const tag_wrap = config.tag_wrap
   const content_wrap = config.content_wrap
-  const ignore_with = config.ignore_with
-  const placeholder_template = `-${ignore_with}`
   const strict = config.strict
 
   /* Track current number of indentations needed. */
@@ -100,12 +98,6 @@ const process = (config) => {
     let current_line_value = source.value
 
     const is_ignored_content =
-      current_line_value.startsWith(placeholder_template + "lt--") ||
-      current_line_value.startsWith(placeholder_template + "gt--") ||
-      current_line_value.startsWith(placeholder_template + "nl--") ||
-      current_line_value.startsWith(placeholder_template + "cr--") ||
-      current_line_value.startsWith(placeholder_template + "ws--") ||
-      current_line_value.startsWith(placeholder_template + "tab--") ||
       current_line_value.startsWith('___HTMLFY_SPECIAL_IGNORE_MARKER_')
 
     let subtrahend = 0
