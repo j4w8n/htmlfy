@@ -15,7 +15,7 @@ import {
   validateConfig, 
   wordWrap
 } from './utils.js'
-import { CONFIG, SELF_CLOSING_PLACEHOLDER, VOID_ELEMENTS } from './constants.js'
+import { CONFIG, VOID_ELEMENTS } from './constants.js'
 import { getState } from './state.js'
 
 /**
@@ -84,6 +84,7 @@ const process = (config) => {
   const tag_wrap = config.tag_wrap
   const content_wrap = config.content_wrap
   const strict = config.strict
+  const { constants } = getState()
 
   /* Track current number of indentations needed. */
   let indents = ''
@@ -120,7 +121,7 @@ const process = (config) => {
     if (
       prev_line_value.trim().endsWith("/>") // native self-closing
       ||
-      prev_line_value.trim().endsWith(SELF_CLOSING_PLACEHOLDER) // synthetic self-closing
+      prev_line_value.trim().endsWith(constants.SELF_CLOSING_PLACEHOLDER) // synthetic self-closing
     ) subtrahend++
     /* prevLine is a closing tag. */
     if (prev_line_value.trim().startsWith("</")) subtrahend++
@@ -222,7 +223,7 @@ const process = (config) => {
   if (tag_wrap > 0) final_html = protectAttributes(final_html)
 
   /* Extra preserve wrapped content. */
-  if (content_wrap > 0 && /\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n/.test(final_html))
+  if (content_wrap > 0 && new RegExp(`/\\n[ ]*[^\\n]*${constants.CONTENT_IGNORE_PLACEHOLDER}[^\\n]*\\n/`).test(final_html))
     final_html = finalProtectContent(final_html)
 
   /* Remove line returns, tabs, and consecutive spaces within html elements or their content. */
@@ -230,7 +231,7 @@ const process = (config) => {
     /<(?<Element>[^>\s]+)[^>]*>[^<]*?[^><\/\s][^<]*?<\/\k<Element>>|<script[^>]*>[\s]*<\/script>|<([\w:\._-]+)([^>]*)><\/\2>|<([\w:\._-]+)([^>]*)>[\s]+<\/\4>/g,
     match => {
       // Check if this contains placeholder
-      if (match.includes(SELF_CLOSING_PLACEHOLDER)) {
+      if (match.includes(constants.SELF_CLOSING_PLACEHOLDER) || match.includes(constants.CONTENT_IGNORE_PLACEHOLDER)) {
         return match // Don't modify if it contains the placeholder
       }
 

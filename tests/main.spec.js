@@ -921,7 +921,7 @@ test('Default ignore_with in HTML', () => {
   <div>
     <br />
     <input />
-    <p>This contains &lt;angled&gt; brackets -_!i-£___£%_gt- and an unfortunate combination of characters</p>
+    <p>This contains &lt;angled&gt; brackets -${CONFIG.ignore_with}gt- and an unfortunate combination of characters</p>
     <input />
     <div></div>
   </div>
@@ -931,6 +931,10 @@ test('Default ignore_with in HTML', () => {
 
 test('Catches invalid ignore config', async () => {
   await expect(testConfig({ ignore: [ 'script', 1 ]})).rejects.toThrow('Ignore config must be an array of strings.')
+})
+
+test('Catches invalid ignore_with config', async () => {
+  await expect(testConfig({ ignore_with: '_hello_'})).rejects.toThrow('ignore_with cannot start or end with an underscore.')
 })
 
 test('Catches invalid trim config', async () => {

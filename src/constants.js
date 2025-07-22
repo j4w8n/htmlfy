@@ -4,7 +4,7 @@
 export const CONFIG = {
   content_wrap: 0,
   ignore: [],
-  ignore_with: '_!i-£___£%_',
+  ignore_with: '!i-£___£%',
   strict: false,
   tab_size: 2,
   tag_wrap: 0,
@@ -12,12 +12,16 @@ export const CONFIG = {
   trim: []
 }
 
-export const CONTENT_IGNORE_STRING = '__!i-£___£%__'
-export const SELF_CLOSING_PLACEHOLDER = '__!//-£___£%//__>'
-export const ATTRIBUTE_IGNORE_STRING = '!i-£___£%_'
-
 export const VOID_ELEMENTS = [
   'area', 'base', 'br', 'col', 'embed', 'hr', 
   'img', 'input', 'link', 'meta',
   'param', 'source', 'track', 'wbr'
 ]
+
+/**
+ * Defined by state.js and configuration.
+ * 
+ * CONTENT_IGNORE_PLACEHOLDER
+ * SELF_CLOSING_PLACEHOLDER
+ * ATTRIBUTE_IGNORE_PLACEHOLDER
+ */

@@ -1,5 +1,5 @@
-import { ATTRIBUTE_IGNORE_STRING, CONFIG, CONTENT_IGNORE_STRING, VOID_ELEMENTS, SELF_CLOSING_PLACEHOLDER } from './constants.js'
-import { setState } from './state.js'
+import { CONFIG, VOID_ELEMENTS } from './constants.js'
+import { getState, setState } from './state.js'
 
 /**
  * Checks if content contains at least one HTML element or custom HTML element.
@@ -73,7 +73,16 @@ const mergeObjects = (current, updates) => {
  */
 export const mergeConfig = (default_config, config) => {
   const validated_config = mergeObjects(default_config, config)
-  setState({ config: validated_config })
+
+  /* Below `constants` prefixes and suffixes must be in sync with those in state.js */
+  setState({ 
+    config: validated_config,
+    constants: {
+      CONTENT_IGNORE_PLACEHOLDER: `${validated_config.ignore_with}_`,
+      SELF_CLOSING_PLACEHOLDER: `${validated_config.ignore_with}/_>`,
+      ATTRIBUTE_IGNORE_PLACEHOLDER: `${validated_config.ignore_with}`
+    }
+  })
   return validated_config
 }
 
@@ -82,12 +91,14 @@ export const mergeConfig = (default_config, config) => {
  * @param {string} html 
  */
 export const protectAttributes = (html) => {
+  const { constants } = getState()
+
   html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
     return match.replace(capture, (match) => {
       return match
-        .replace(/\n/g, ATTRIBUTE_IGNORE_STRING + 'nl!')
-        .replace(/\r/g, ATTRIBUTE_IGNORE_STRING + 'cr!')
-        .replace(/\s/g, ATTRIBUTE_IGNORE_STRING + 'ws!')
+        .replace(/\n/g, constants.ATTRIBUTE_IGNORE_PLACEHOLDER + 'nl!')
+        .replace(/\r/g, constants.ATTRIBUTE_IGNORE_PLACEHOLDER + 'cr!')
+        .replace(/\s/g, constants.ATTRIBUTE_IGNORE_PLACEHOLDER + 'ws!')
     })
   })
 
@@ -99,10 +110,12 @@ export const protectAttributes = (html) => {
  * @param {string} html 
  */
 export const protectContent = (html) => {
+  const { constants } = getState()
+
   return html
-    .replace(/\n/g, CONTENT_IGNORE_STRING + 'nl!')
-    .replace(/\r/g, CONTENT_IGNORE_STRING + 'cr!')
-    .replace(/\s/g, CONTENT_IGNORE_STRING + 'ws!')
+    .replace(/\n/g, constants.CONTENT_IGNORE_PLACEHOLDER + 'nl!')
+    .replace(/\r/g, constants.CONTENT_IGNORE_PLACEHOLDER + 'cr!')
+    .replace(/\s/g, constants.CONTENT_IGNORE_PLACEHOLDER + 'ws!')
 }
 
 /**
@@ -110,7 +123,9 @@ export const protectContent = (html) => {
  * @param {string} html 
  */
 export const finalProtectContent = (html) => {
-  const regex = /\s*<([a-zA-Z0-9:-]+)[^>]*>\n\s*<\/\1>(?=\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n)(\n[ ]*\S[^\n]*\n)|<([a-zA-Z0-9:-]+)[^>]*>(?=\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n)(\n[ ]*\S[^\n]*\n\s*)<\/\3>/g
+  const regex = /\s*<([a-zA-Z0-9:-]+)[^>]*>\n\s*<\/\1>(?=\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n)(\n[ ]*\S[^\n]*\n)|<([a-zA-Z0-9:-]+)[^>]*>(?=\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n)(\n[ ]*\S[^\n]*\n\s*)<\/\3>/g 
+  const { constants } = getState()
+
   return html
     .replace(regex, (/** @type {string} */match, p1, p2, p3, p4) => {
       const text_to_protect = p2 || p4
@@ -119,9 +134,9 @@ export const finalProtectContent = (html) => {
         return match
 
       const protected_text = text_to_protect
-       .replace(/\n/g, CONTENT_IGNORE_STRING + 'nl!')
-       .replace(/\r/g, CONTENT_IGNORE_STRING + 'cr!')
-       .replace(/\s/g, CONTENT_IGNORE_STRING + "ws!");
+       .replace(/\n/g, constants.CONTENT_IGNORE_PLACEHOLDER + 'nl!')
+       .replace(/\r/g, constants.CONTENT_IGNORE_PLACEHOLDER + 'cr!')
+       .replace(/\s/g, constants.CONTENT_IGNORE_PLACEHOLDER + "ws!");
 
       return match.replace(text_to_protect, protected_text)
     })
@@ -134,13 +149,14 @@ export const finalProtectContent = (html) => {
  * @returns {string}
  */
 export const setIgnoreAttribute = (html) => {
-  const regex = /<([A-Za-z][A-Za-z0-9]*|[a-z][a-z0-9._]*-[a-z0-9._-]+)((?:\s+[A-Za-z0-9_-]+="[^"]*"|\s*[a-z]*)*)>/g
+  const regex = /<([A-Za-z][A-Za-z0-9]*|[a-z][a-z0-9._]*-[a-z0-9._-]+)((?:\s+[A-Za-z0-9_-]+="[^"]*"|\s*[a-z]*)*)>/g 
+  const { constants } = getState()
 
   html = html.replace(regex, (/** @type {string} */match, p1, p2) => {
     return match.replace(p2, (match) => {
       return match
-        .replace(/</g, ATTRIBUTE_IGNORE_STRING + 'lt!')
-        .replace(/>/g, ATTRIBUTE_IGNORE_STRING + 'gt!')
+        .replace(/</g, constants.ATTRIBUTE_IGNORE_PLACEHOLDER + 'lt!')
+        .replace(/>/g, constants.ATTRIBUTE_IGNORE_PLACEHOLDER + 'gt!')
     })
   })
   
@@ -173,12 +189,14 @@ export const trimify = (html, trim) => {
  * @param {string} html 
  */
 export const unprotectAttributes = (html) => {
+  const { constants } = getState()
+
   html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
     return match.replace(capture, (match) => {
       return match
-        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'nl!', "g"), '\n')
-        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'cr!', "g"), '\r')
-        .replace(new RegExp(ATTRIBUTE_IGNORE_STRING + 'ws!', "g"), ' ')
+        .replace(new RegExp(constants.ATTRIBUTE_IGNORE_PLACEHOLDER + 'nl!', "g"), '\n')
+        .replace(new RegExp(constants.ATTRIBUTE_IGNORE_PLACEHOLDER + 'cr!', "g"), '\r')
+        .replace(new RegExp(constants.ATTRIBUTE_IGNORE_PLACEHOLDER + 'ws!', "g"), ' ')
     })
   })
 
@@ -190,24 +208,19 @@ export const unprotectAttributes = (html) => {
  * @param {string} html 
  */
 export const unprotectContent = (html) => {
-  html = html.replace(/.*__!i-£___£%__[a-z]{2}!.*/g, (/** @type {string} */match) => {
-    return match.replace(/__!i-£___£%__[a-z]{2}!/g, (match) => {
+  const { constants } = getState()
+
+  html = html.replace(new RegExp(`.*${constants.CONTENT_IGNORE_PLACEHOLDER}[a-z]{2}!.*`, "g"), (/** @type {string} */match) => {
+    return match.replace(new RegExp(`${constants.CONTENT_IGNORE_PLACEHOLDER}[a-z]{2}!`, "g"), (match) => {
       return match
-        .replace(new RegExp(CONTENT_IGNORE_STRING + 'nl!', "g"), '\n')
-        .replace(new RegExp(CONTENT_IGNORE_STRING + 'cr!', "g"), '\r')
-        .replace(new RegExp(CONTENT_IGNORE_STRING + 'ws!', "g"), ' ')
+        .replace(new RegExp(constants.CONTENT_IGNORE_PLACEHOLDER + 'nl!', "g"), '\n')
+        .replace(new RegExp(constants.CONTENT_IGNORE_PLACEHOLDER + 'cr!', "g"), '\r')
+        .replace(new RegExp(constants.CONTENT_IGNORE_PLACEHOLDER + 'ws!', "g"), ' ')
     })
   })
 
   return html
 }
-
-const escapedIgnoreString = ATTRIBUTE_IGNORE_STRING.replace(
-  /[-\/\\^$*+?.()|[\]{}]/g,
-  "\\$&"
-);
-const ltPlaceholderRegex = new RegExp(escapedIgnoreString + "lt!", "g");
-const gtPlaceholderRegex = new RegExp(escapedIgnoreString + "gt!", "g");
 
 /**
  * Replace ignore string with html brackets.
@@ -218,6 +231,13 @@ const gtPlaceholderRegex = new RegExp(escapedIgnoreString + "gt!", "g");
 export const unsetIgnoreAttribute = (html) => {
   /* Regex to find opening tags and capture their attributes. */
   const tagRegex = /<([\w:\-]+)([^>]*)>/g
+  const { constants } = getState()
+  const escapedIgnoreString = constants.ATTRIBUTE_IGNORE_PLACEHOLDER.replace(
+    /[-\/\\^$*+?.()|[\]{}]/g,
+    "\\$&"
+  )
+  const ltPlaceholderRegex = new RegExp(escapedIgnoreString + "lt!", "g")
+  const gtPlaceholderRegex = new RegExp(escapedIgnoreString + "gt!", "g")
 
   return html.replace(
     tagRegex,
@@ -287,8 +307,16 @@ export const validateConfig = (config) => {
   if (Object.hasOwn(config, 'ignore') && (!Array.isArray(config.ignore) || !config.ignore?.every((e) => typeof e === 'string')))
     throw new Error('Ignore config must be an array of strings.')
 
-  if (Object.hasOwn(config, 'ignore_with') && typeof config.ignore_with !== 'string')
-    throw new Error(`Ignore_with config must be a string, not ${typeof config.ignore_with}.`)
+  if (Object.hasOwn(config, 'ignore_with')) {
+    if (typeof config.ignore_with !== 'string')
+      throw new Error(`ignore_with must be a string, not ${typeof config.ignore_with}.`)
+    else if (config.ignore_with.startsWith('_') || config.ignore_with.endsWith('_'))
+      /**
+       * This negatively affects processing of preserved tag attributes,
+       * but I'm not sure why.
+       */
+      throw new Error(`ignore_with cannot start or end with an underscore.`)
+  }
 
   if (Object.hasOwn(config, 'strict') && typeof config.strict !== 'boolean')
     throw new Error(`Strict config must be a boolean, not ${typeof config.strict}.`)
@@ -461,10 +489,12 @@ const void_element_regex = new RegExp(`<(${VOID_ELEMENTS.join("|")})(?:\\s(?:[^/
  * @returns 
  */
 export function setSelfClosing(html) {
+  const { constants } = getState()
+
   return html.replace(
     // match only void elements that are not self-closing
     void_element_regex,
-    match => match.replace(/>$/, SELF_CLOSING_PLACEHOLDER)
+    match => match.replace(/>$/, constants.SELF_CLOSING_PLACEHOLDER)
   )
 }
 
@@ -475,5 +505,7 @@ export function setSelfClosing(html) {
  * @returns 
  */
 export function unsetSelfClosing(html) {
-  return html.replace(SELF_CLOSING_PLACEHOLDER, ">")
+  const { constants } = getState()
+
+  return html.replace(constants.SELF_CLOSING_PLACEHOLDER, ">")
 }
