@@ -68,10 +68,6 @@ const enqueue = (html) => {
  * @returns {string}
  */
 const preprocess = (html) => {
-  const { config } = getState()
-
-  if (config.trim.length > 0) html = trimify(html, config.trim)
-
   html = minify(html)
   html = enqueue(html)
 
@@ -109,7 +105,8 @@ const process = (config) => {
       current_line_value.startsWith(placeholder_template + "nl--") ||
       current_line_value.startsWith(placeholder_template + "cr--") ||
       current_line_value.startsWith(placeholder_template + "ws--") ||
-      current_line_value.startsWith(placeholder_template + "tab--")
+      current_line_value.startsWith(placeholder_template + "tab--") ||
+      current_line_value.startsWith('___HTMLFY_SPECIAL_IGNORE_MARKER_')
 
     let subtrahend = 0
     const prev_line_data = convert.line[index - 1]
@@ -282,9 +279,12 @@ export const prettify = (html, config) => {
   const validated_config = config ? validateConfig(config) : { ...CONFIG }
   const ignore = validated_config.ignore.length > 0
 
+  /* Allows you to trimify before ignoring. */
+  if (validated_config.trim.length > 0) html = trimify(html, validated_config.trim)
+
   /* Extract ignored elements. */
   if (!ignored && ignore) {
-    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html, validated_config);
+    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html, validated_config)
     html = html_with_markers
     ignore_map = extracted_map
     reinsert_ignored = true

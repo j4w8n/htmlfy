@@ -1,4 +1,4 @@
-import { entify } from "./entify.js"
+import { dentify, entify } from "./entify.js"
 import { extractIgnoredBlocks, isHtml, reinsertIgnoredBlocks, validateConfig } from "./utils.js"
 import { getState } from "./state.js"
 
@@ -33,10 +33,10 @@ export const minify = (html, config) => {
   }
 
   /**
-   * Ensure textarea content is specially minified and protected
+   * Ensure textarea content is protected
    * before general minification.
    */
-  html = entify(html)
+  html = entify(html, true)
 
   /* All other minification. */
   // Remove ALL newlines and tabs explicitly.
@@ -48,11 +48,13 @@ export const minify = (html, config) => {
   // Collapse any remaining multiple spaces to single spaces.
   html = html.replace(/ {2,}/g, ' ')
 
-  // Remove specific single spaces OR whitespace within closing tags.
+  // Remove specific single spaces between tags and whitespace within tags.
   html = html.replace(/ >/g, ">")   // <tag > -> <tag>
-  html = html.replace(/ </g, "<")   // Text < -> Text< (Also handles leading space before tag)
-  html = html.replace(/> /g, ">")   // > Text -> >Text
-  html = html.replace(/<\s*\//g, '</') // < /tag -> </tag>
+  html = html.replace(/ </g, "<")   // leading space before tag
+  html = html.replace(/> /g, ">")   // trailing space after tag
+  html = html.replace(/< /g, "<")   // < tag> -> <tag>
+  html = html.replace(/<\s+\//g, '</') // < /tag> -> </tag>
+  html = html.replace(/<\/\s+/g, '</') // </ tag> -> </tag>
 
   // Trim spaces around equals signs in attributes (run before value trim)
   //    This handles `attr = "value"` -> `attr="value"`
@@ -72,6 +74,9 @@ export const minify = (html, config) => {
 
   // Final trim for the whole string
   html = html.trim()
+
+  /* Remove protective entities. */
+  html = dentify(html)
 
   /* Re-insert ignored elements. Skipped unless minify did the ignore. */
   if (reinsert_ignored) {

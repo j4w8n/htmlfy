@@ -477,7 +477,7 @@ export const wordWrap = (text, width, indent) => {
  * 
  * @param {string} html 
  * @param {import('htmlfy').Config} config 
- * @returns {{  html_with_markers: string, extracted_map: Map<any,any> }}
+ * @returns {{ html_with_markers: string, extracted_map: Map<any,any> }}
  */
 export function extractIgnoredBlocks(html, config) {
   setState({ ignored: true })
@@ -491,19 +491,27 @@ export function extractIgnoredBlocks(html, config) {
     const safe_tag_name = tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")
 
     const regex = new RegExp(
-      `<${safe_tag_name}[^>]*>.*?<\/${safe_tag_name}>`,
+      `(<\\s*${safe_tag_name}[^>]*>)(.*?)(<\\s*\/\\s*${safe_tag_name}\\s*>)`,
       "gs" // global and dotAll
     )
 
+    /** @type RegExpExecArray | null */
     let match
-    const replacements = [] // Store [startIndex, endIndex, marker]
+
+    /**
+     * @type {{ start: number; end: number; marker: string }[]}
+     */
+    const replacements = []
 
     while ((match = regex.exec(current_html)) !== null) {
       const marker = `${MARKER_PREFIX}${marker_id++}___`
-      extracted_blocks.set(marker, match[0]) // Store the full original match
+
+      /* Only store content, and minify tags later. */
+      extracted_blocks.set(marker, match[2])
+      
       replacements.push({
-        start: match.index,
-        end: regex.lastIndex,
+        start: match.index + match[1].length, // start of content
+        end: match.index + match[1].length + match[2].length, // end of content
         marker: marker,
       })
     }
@@ -517,6 +525,7 @@ export function extractIgnoredBlocks(html, config) {
         current_html.substring(rep.end)
     }
   }
+
   return { html_with_markers: current_html, extracted_map: extracted_blocks }
 }
 

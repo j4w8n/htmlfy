@@ -28,14 +28,22 @@ title="We need your email for verification." name="email" required><!--    This 
 <link:test>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</link:test>
 <mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</mg-card>`
 
-const entify_html = `<textarea  >
+const single_textarea_html = `<   textarea  >
 
 Did   you know that 3 >   2?
 
 This is another paragraph.   
 
 
-</textarea><textarea class="  more  stuff  ">    </textarea>`
+</  textarea   >`
+const textarea_html = `<   textarea  >
+
+Did   you know that 3 >   2?
+
+This is another paragraph.   
+
+
+</  textarea   ><textarea class="  more  stuff  ">    </textarea>`
 
 const pretty_html = `<form id="3">
   <!-- This is a comment. -->
@@ -647,8 +655,8 @@ test('Custom elements with heavy plaintext nesting', () => {
 test('Trimify', () => {
   expect(trimify(trim_leading_whitespace, ['div'])).toBe('<div>Hello</div>')
   expect(trimify(trim_trailing_whitespace, ['div'])).toBe('<div>Hello</div>')
-  expect(prettify(entify_html, { trim: [ 'textarea' ]})).toBe(
-    `<textarea>Did&nbsp;&nbsp;&nbsp;you&nbsp;know&nbsp;that&nbsp;3&nbsp;&gt;&nbsp;&nbsp;&nbsp;2?&#10;&#10;This&nbsp;is&nbsp;another&nbsp;paragraph.</textarea>
+  expect(prettify(textarea_html)).toBe(
+    `<textarea>Did you know that 3 > 2? This is another paragraph.</textarea>
 <textarea class="more stuff"></textarea>`
   )
 })
@@ -789,8 +797,8 @@ text
 })
 
 test('Entify', () => {
-  expect(entify(entify_html)).toBe(
-    `<textarea  >&#10;&#10;Did&nbsp;&nbsp;&nbsp;you&nbsp;know&nbsp;that&nbsp;3&nbsp;&gt;&nbsp;&nbsp;&nbsp;2?&#10;&#10;This&nbsp;is&nbsp;another&nbsp;paragraph.&nbsp;&nbsp;&nbsp;&#10;&#10;&#10;</textarea><textarea class="  more  stuff  ">&nbsp;&nbsp;&nbsp;&nbsp;</textarea>`
+  expect(entify(textarea_html)).toBe(
+    `<   textarea  >&#10;&#10;Did&nbsp;&nbsp;&nbsp;you&nbsp;know&nbsp;that&nbsp;3&nbsp;&gt;&nbsp;&nbsp;&nbsp;2?&#10;&#10;This&nbsp;is&nbsp;another&nbsp;paragraph.&nbsp;&nbsp;&nbsp;&#10;&#10;&#10;</  textarea   ><textarea class="  more  stuff  ">&nbsp;&nbsp;&nbsp;&nbsp;</textarea>`
   )
 })
 
@@ -799,7 +807,7 @@ test('Entify with plain text', () => {
 })
 
 test('Entify with minify', () => {
-  expect(entify(entify_html, true)).toBe(
+  expect(entify(textarea_html, true)).toBe(
     `<textarea>&#10;&#10;Did&nbsp;&nbsp;&nbsp;you&nbsp;know&nbsp;that&nbsp;3&nbsp;&gt;&nbsp;&nbsp;&nbsp;2?&#10;&#10;This&nbsp;is&nbsp;another&nbsp;paragraph.&nbsp;&nbsp;&nbsp;&#10;&#10;&#10;</textarea><textarea class="more stuff">&nbsp;&nbsp;&nbsp;&nbsp;</textarea>`
   )
 })
@@ -814,6 +822,33 @@ test('Closify', () => {
 
 test('Closify with HTML check', () => {
   expect(closify('No HTML')).toBe('No HTML')
+})
+
+test('Ignore textarea tag', () => {
+  expect(prettify(single_textarea_html, { ignore: [ 'textarea' ]})).toBe(
+    `<textarea>
+
+Did   you know that 3 >   2?
+
+This is another paragraph.   
+
+
+</textarea>`
+  )
+})
+
+test('Ignore consecutive textarea tags', () => {
+  expect(prettify(textarea_html, { ignore: [ 'textarea' ]})).toBe(
+    `<textarea>
+
+Did   you know that 3 >   2?
+
+This is another paragraph.   
+
+
+</textarea>
+<textarea class="more stuff">    </textarea>`
+  )
 })
 
 test('Ignore script tag', () => {
