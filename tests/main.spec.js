@@ -304,7 +304,8 @@ const pretty_wrapped_strict_html = `<form id="3">
 
 const closify_html = `<form id="3">
 <!-- This is a comment. -->
-<!-- This is a second comment. --><br><input><br><input><link:test></link:test></form>`
+<form id="test" />
+<!-- This is a second comment. --><br><input class="hello"><br><input><link:test></link:test></form>`
 
 const config_html = `<form id="3">
 <!-- This is a comment. -->
@@ -807,7 +808,8 @@ test('Closify', () => {
   expect(closify(closify_html)).toBe(
 `<form id="3">
 <!-- This is a comment. -->
-<!-- This is a second comment. --><br /><input /><br /><input /><link:test></link:test></form>`
+<form id="test"></form>
+<!-- This is a second comment. --><br /><input class="hello" /><br /><input /><link:test></link:test></form>`
   )
 })
 

@@ -12,11 +12,14 @@ declare module 'htmlfy' {
   export type Config = Required<UserConfig>
 
   /**
-   * Ensure void elements are "self-closing".
+   * Ensure void elements are self-closing.
+   * Also transforms self-closing, non-void elements
+   * into opening/closing elements.
    * 
    * @param {string} html The HTML string to evaluate.
    * @returns {string}
    * @example <br> => <br />
+   * @example <form /> => <form></form>
    */
   export function closify(html: string): string
 
