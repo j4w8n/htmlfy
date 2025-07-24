@@ -1,6 +1,6 @@
 /**
  * Enforce entity characters for textarea content.
- * To also minifiy, pass `minify` as `true`.
+ * To also minifiy tags, pass `minify` as `true`.
  * 
  * @param {string} html The HTML string to evaluate.
  * @param {boolean} [minify] Minifies the textarea tags themselves. 
@@ -28,9 +28,8 @@ export const entify = (html, minify = false) => {
     })
   })
 
-  /* Typical minification, but only for textareas. */
   if (minify) {
-    html = html.replace(/<\s*textarea[^>]*>((.|\n)*?)<\s*\/\s*textarea\s*>/g, (match, capture) => {
+    html = html.replace(/<\s*textarea[^>]*>(.|\n)*?<\s*\/\s*textarea\s*>/g, (match) => {
       /* This only affects the html tags, since everything else has been entified. */
       return match
         .replace(/\s+/g, ' ')
