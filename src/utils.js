@@ -136,7 +136,7 @@ export const finalProtectContent = (html) => {
       const protected_text = text_to_protect
        .replace(/\n/g, constants.CONTENT_IGNORE_PLACEHOLDER + 'nl!')
        .replace(/\r/g, constants.CONTENT_IGNORE_PLACEHOLDER + 'cr!')
-       .replace(/\s/g, constants.CONTENT_IGNORE_PLACEHOLDER + "ws!");
+       .replace(/\s/g, constants.CONTENT_IGNORE_PLACEHOLDER + "ws!")
 
       return match.replace(text_to_protect, protected_text)
     })
@@ -392,11 +392,11 @@ export const wordWrap = (text, width, indent) => {
  * for re-insertion later.
  * 
  * @param {string} html 
- * @param {import('htmlfy').Config} config 
  * @returns {{ html_with_markers: string, extracted_map: Map<any,any> }}
  */
-export function extractIgnoredBlocks(html, config) {
+export function extractIgnoredBlocks(html) {
   setState({ ignored: true })
+  const config = (getState()).config
   let current_html = html
   const extracted_blocks = new Map()
   let marker_id = 0

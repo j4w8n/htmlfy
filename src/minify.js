@@ -26,7 +26,7 @@ export const minify = (html, config) => {
 
   /* Extract ignored elements. Skipped if prettify has already ignored blocks. */
   if (!ignored && ignore) {
-    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html, validated_config);
+    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html)
     html = html_with_markers
     ignore_map = extracted_map
     reinsert_ignored = true

@@ -15,7 +15,7 @@ import {
   validateConfig, 
   wordWrap
 } from './utils.js'
-import { CONFIG, VOID_ELEMENTS } from './constants.js'
+import { VOID_ELEMENTS } from './constants.js'
 import { getState } from './state.js'
 
 /**
@@ -34,7 +34,6 @@ let ignore_map
  * Isolate tags, content, and comments.
  * 
  * @param {string} html The HTML string to evaluate.
- * @returns {string}
  * @example <div>Hello World!</div> => 
  *  [#-# : 0 : <div> : #-#]
  *  Hello World!
@@ -46,7 +45,7 @@ const enqueue = (html) => {
   /* Regex to find tags OR text content between tags. */
   const regex = /(<[^>]+>)|([^<]+)/g
 
-  html = html.replace(regex, (match, c1, c2) => {
+  html.replace(regex, (match, c1, c2) => {
     if (c1) {
       convert.line.push({ type: "tag", value: match })
     } else if (c2 && c2.trim().length > 0) {
@@ -57,34 +56,19 @@ const enqueue = (html) => {
     i++
     return `\n[#-# : ${i} : ${match} : #-#]\n`
   })
-
-  return html
-};
-
-/**
- * Preprocess the HTML.
- * 
- * @param {string} html The HTML string to preprocess.
- * @returns {string}
- */
-const preprocess = (html) => {
-  html = minify(html)
-  html = enqueue(html)
-
-  return html
 }
 
 /**
- * 
- * @param {import('htmlfy').Config} config 
+ * Process enqueued content.
+ *  
  * @returns {string}
  */
-const process = (config) => {
+const process = () => {
+  const { config, constants } = getState()
   const step = " ".repeat(config.tab_size)
   const tag_wrap = config.tag_wrap
   const content_wrap = config.content_wrap
   const strict = config.strict
-  const { constants } = getState()
 
   /* Track current number of indentations needed. */
   let indents = ''
@@ -179,8 +163,8 @@ const process = (config) => {
         result.length > tag_wrap &&
         tag_regex.test(result)
       ) {
-        tag_regex.lastIndex = 0; // Reset stateful regex
-        attribute_regex.lastIndex = 0; // Reset stateful regex
+        tag_regex.lastIndex = 0 // Reset stateful regex
+        attribute_regex.lastIndex = 0 // Reset stateful regex
 
         const tag_parts = result.split(attribute_regex).filter(Boolean)
 
@@ -269,7 +253,9 @@ export const prettify = (html, config) => {
   /* Return content as-is if it does not contain any HTML elements. */
   if (!checked_html && !isHtml(html)) return html
 
-  const validated_config = config ? validateConfig(config) : { ...CONFIG }
+  /* Runs setState for config. */
+  const validated_config = validateConfig(config || {})
+
   const ignore = validated_config.ignore.length > 0
 
   /* Allows you to trimify before ignoring. */
@@ -277,7 +263,7 @@ export const prettify = (html, config) => {
 
   /* Extract ignored elements. */
   if (!ignored && ignore) {
-    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html, validated_config)
+    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html)
     html = html_with_markers
     ignore_map = extracted_map
     reinsert_ignored = true
@@ -289,8 +275,9 @@ export const prettify = (html, config) => {
   /* Insert placeholder for void elements that aren't self-closing. */
   html = setSelfClosing(html)
 
-  html = preprocess(html)
-  html = process(validated_config)
+  html = minify(html)
+  enqueue(html)
+  html = process()
 
   /* Revert html text within attribute values. */
   html = unsetIgnoreAttribute(html)
