@@ -1,7 +1,7 @@
 {
 	"name": "htmlfy",
-	"version": "0.8.1",
-	"description": "HTML formatter yo! Prettify, minify, and more!",
+	"version": "1.0.0",
+	"description": "html formatter yo! Prettify or minify html.",
 	"main": "./src/exports/index.js",
 	"scripts": {
 		"check": "tsc",
@@ -29,9 +29,9 @@
 		"url": "git+https://github.com/j4w8n/htmlfy.git"
 	},
 	"keywords": [
-		"HTML",
 		"format",
-		"formatter",
+		"html",
+		"pretty",
 		"prettier",
 		"minifier",
 		"prettify",

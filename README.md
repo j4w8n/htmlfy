@@ -1,24 +1,27 @@
 # htmlfy
-HTML formatter yo! Prettify, minify and more!
+HTML formatter yo!
 
-`htmlfy` is a fork of [html-formatter](https://github.com/uznam8x/html-formatter/tree/master). A lot of the processing logic has been preserved, and full credit for that goes to the original author. I've made the following major enhancements.
+Prettier html, minified html, and a few more goodies.
 
-- Fully typed.
-- Converted to ESM.
-- Added configuration options.
-- Added support for custom HTML elements (web components)
-- Lots of refactoring.
-- Made it go brrr fast.
+`htmlfy` is a fork of [html-formatter](https://github.com/uznam8x/html-formatter/tree/master). Some of the processing logic has been preserved, and full credit for that goes to the original author.
+
+I've made the following enhancements:
+
+- Fully typed
+- Converted to ESM
+- Configuration options
+- Support for custom HTML elements (web components)
+- Refactoring galore
+- Made it go brrr fast
 
 ## Install
 
 `npm install htmlfy`
 
 ## API
-Most projects will only need to use `prettify` and/or `minify`.
 
 ### Prettify
-Turn single-line or ugly HTML into highly formatted HTML. This is a wrapper for all other functions, except `trimify`, and then it adds indentation.
+Turn single-line or ugly HTML into highly formatted HTML. You can pass a configuration object as the second argument.
 
 ```js
 import { prettify } from 'htmlfy'
@@ -35,9 +38,9 @@ console.log(prettify(html))
 ```
 
 ### Minify
-Turn well-formatted or ugly HTML into a single line of HTML.
+Turn well-formatted or ugly HTML into a single line of HTML. You can pass a configuration object as the second argument. This function is called internally when you use `prettify`.
 
-> This feature is not a replacement for compressors like [htmlnano](https://github.com/posthtml/htmlnano), which focus on giving you the smallest data-size possible; but rather, it simply removes tabs, returns, and redundant whitespace.
+> This feature is not a replacement for compressors like [htmlnano](https://github.com/posthtml/htmlnano), which focus on giving you the smallest data-size possible.
 
 ```js
 import { minify } from 'htmlfy'
@@ -55,9 +58,7 @@ console.log(minify(html))
 ```
 
 ### Closify
-> This is done when using prettify, but you can use it in a one-off scenario if needed.
-
-Ensure [void elements](https://developer.mozilla.org/en-US/docs/Glossary/Void_element) are "self-closing".
+A standalone function that ensures [void elements](https://developer.mozilla.org/en-US/docs/Glossary/Void_element) are "self-closing".
 
 ```js
 import { closify } from 'htmlfy'
@@ -69,10 +70,20 @@ console.log(closify(html))
 */
 ```
 
-### Entify
-> This is done when using prettify, but you can use it in a one-off scenario if needed.
+It also normalizes non-void elements which happen to be self-closing for whatever reason.
 
-Enforce entity characters for textarea content. This also performs basic minification on textareas before setting entities. When running this function as a standalone, you'll likely want to pass `minify` as `true` for full minification of the textarea. The minification does not process any other tags.
+```js
+import { closify } from 'htmlfy'
+
+const html = `<form class="hello" />`
+console.log(closify(html))
+/*
+<form class="hello"></form>
+*/
+```
+
+### Entify
+A standalone function that enforces entity characters for textarea content. You can pass `true ` as the `minify` to minify the tags themselves. Note that this does not run the HTML through the `minify` function.
 
 ```js
 import { entify } from 'htmlfy'
@@ -87,21 +98,21 @@ This is another paragraph.
 </textarea><textarea class="  more  stuff  ">    </textarea>`
 console.log(entify(html, true))
 /*
-<main class="hello   there world"><div>Welcome to htmlfy!  </div></main><textarea>Did you know that 3 &gt; 2?&#13;&#13;This is another paragraph.</textarea><textarea class="more stuff"></textarea>
+<main class="hello   there world"><div>Welcome to htmlfy!  </div></main><textarea>&#10;&#10;Did&nbsp;&nbsp;&nbsp;you&nbsp;know&nbsp;that&nbsp;3&nbsp;&gt;&nbsp;&nbsp;&nbsp;2?&#10;&#10;This&nbsp;is&nbsp;another&nbsp;paragraph.&nbsp;&nbsp;&nbsp;&#10;&#10;&#10;</textarea><textarea class="more stuff">&nbsp;&nbsp;&nbsp;&nbsp;</textarea>
 */
 ```
 
 ### Trimify
-Trim leading and trailing whitespace for whatever HTML element(s) you'd like. This is a standalone function, which is not run with `prettify` by default.
+A standalone function that trims leading and trailing whitespace for whatever HTML elements you'd like.
 
 ```js
 import { trimify } from 'htmlfy'
 
 const html = `<div>
-Hello World
+Hello    World
 </div>`
-console.log(trimify(html, [ 'div' ]))
-/* <div>Hello World</div> */
+console.log(trimify(html, ['div']))
+/* <div>Hello    World</div> */
 ```
 
 ### Default Import
@@ -156,19 +167,19 @@ console.log(prettify(html, { content_wrap: 40 }))
 ```
 
 ### Ignore
-Tell htmlfy to not process some elements and leave them as-is.
+Tell htmlfy to not process some elements' content and leave them as-is. Note this still minifies the tags themselves.
 
 ```js
 import { prettify } from 'htmlfy'
 
 const html = `
 <main><div>Hello World</div></main>
-<style>
+<style  >
 body {
   width: 100
 }
 </style>`
-console.log(prettify(html, { ignore: [ 'style' ] }))
+console.log(prettify(html, { ignore: ['style'] }))
 /*
 <main>
   <div>
@@ -184,10 +195,10 @@ body {
 ```
 
 ### Ignore With
-You can pass in your own string, for ignoring elements, if the default is actually being used in your ignored elements.
+You can pass in your own string, for ignoring elements, if the default is actually being used in the elements you want to ignore.
 
 ```js
-prettify(html, { ignore: [ 'p' ], ignore_with: 'some-string-that-wont-be-in-your-ignored-elements' })
+prettify(html, { ignore: ['p'], ignore_with: 'some-string-that-wont-be-in-your-ignored-elements' })
 ```
 
 ### Strict
@@ -247,14 +258,12 @@ console.log(prettify(html, { tag_wrap: 40 }))
 ```
 
 ### Trim
-Trim leading and trailing whitespace within `textarea` elements, since all whitespace is preserved by default.
+Trim leading and trailing whitespace within elements. Good for when you are ignoring certain elements, but still want to remove this whitespace.
 
 ```js
 import { prettify } from 'htmlfy'
 
-const html = '<textarea>    Hello World    </textarea>'
-console.log(prettify(html, { trim: [ 'textarea' ]}))
-/*<textarea>Hello&nbsp;World</textarea>*/
+const html = '<textarea>    Hello   World    </textarea>'
+console.log(prettify(html, { trim: ['textarea'], ignore: ['textarea']}))
+/*<textarea>Hello   World</textarea>*/
 ```
-
-> For compatibility and possible future expansion, we require declaring an array with the value 'textarea', as opposed to using something like `{ trim: true }`. Passing in additional HTML element values has no real effect, since we already trim whitespace for all other elements.

@@ -6,32 +6,35 @@ declare module 'htmlfy' {
     strict?: boolean;
     tab_size?: number;
     tag_wrap?: number;
-    tag_wrap_width?: number;
     trim?: string[];
   }
 
   export type Config = Required<UserConfig>
 
   /**
-   * Ensure void elements are "self-closing".
-   *
+   * Ensure void elements are self-closing.
+   * Also transforms self-closing, non-void elements
+   * into opening/closing elements.
+   * 
    * @param {string} html The HTML string to evaluate.
-   * @returns An HTML string where void elements are formatted as self-closing.
+   * @returns {string}
    * @example <br> => <br />
+   * @example <form /> => <form></form>
    */
   export function closify(html: string): string
 
   /**
    * Enforce entity characters for textarea content.
-   * By default, this also does basic minification before setting entities.
-   * For full minification, pass `minify` as `true`.
+   * To also minifiy, pass `minify` as `true`.
    * 
    * @param {string} html The HTML string to evaluate.
-   * @param {boolean} [minify] Fully minifies the content of textarea elements. 
+   * @param {boolean} [minify] Minifies the textarea tags themselves. 
    * Defaults to `false`. We recommend a value of `true` if you're running `entify()` 
    * as a standalone function.
-   * @returns An HTML string where entities are enforced on the contents of textareas.
-   * @example <textarea>3 > 2</textarea> => <textarea>3 &gt; 2</textarea>
+   * @returns {string}
+   * @example <textarea>3 > 2</textarea> => <textarea>3&nbsp;&gt;&nbsp;2</textarea>
+   * @example With minify.
+   * <textarea  >3 > 2</textarea> => <textarea>3&nbsp;&gt;&nbsp;2</textarea>
    */
   export function entify(html: string, minify?: boolean): string
 

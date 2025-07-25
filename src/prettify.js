@@ -1,4 +1,3 @@
-import { closify } from './closify.js'
 import { minify } from './minify.js'
 import { 
   extractIgnoredBlocks,
@@ -7,6 +6,8 @@ import {
   protectAttributes, 
   reinsertIgnoredBlocks, 
   setIgnoreAttribute, 
+  setSelfClosing, 
+  unsetSelfClosing, 
   trimify, 
   unprotectAttributes, 
   unprotectContent, 
@@ -14,7 +15,7 @@ import {
   validateConfig, 
   wordWrap
 } from './utils.js'
-import { CONFIG, VOID_ELEMENTS } from './constants.js'
+import { VOID_ELEMENTS } from './constants.js'
 import { getState } from './state.js'
 
 /**
@@ -33,7 +34,6 @@ let ignore_map
  * Isolate tags, content, and comments.
  * 
  * @param {string} html The HTML string to evaluate.
- * @returns {string}
  * @example <div>Hello World!</div> => 
  *  [#-# : 0 : <div> : #-#]
  *  Hello World!
@@ -45,7 +45,7 @@ const enqueue = (html) => {
   /* Regex to find tags OR text content between tags. */
   const regex = /(<[^>]+>)|([^<]+)/g
 
-  html = html.replace(regex, (match, c1, c2) => {
+  html.replace(regex, (match, c1, c2) => {
     if (c1) {
       convert.line.push({ type: "tag", value: match })
     } else if (c2 && c2.trim().length > 0) {
@@ -56,40 +56,18 @@ const enqueue = (html) => {
     i++
     return `\n[#-# : ${i} : ${match} : #-#]\n`
   })
-
-  return html
-};
-
-/**
- * Preprocess the HTML.
- * 
- * @param {string} html The HTML string to preprocess.
- * @returns {string}
- */
-const preprocess = (html) => {
-  html = closify(html)
-
-  const { config } = getState()
-
-  if (config.trim.length > 0) html = trimify(html, config.trim)
-
-  html = minify(html)
-  html = enqueue(html)
-
-  return html
 }
 
 /**
- * 
- * @param {import('htmlfy').Config} config 
+ * Process enqueued content.
+ *  
  * @returns {string}
  */
-const process = (config) => {
+const process = () => {
+  const { config, constants } = getState()
   const step = " ".repeat(config.tab_size)
   const tag_wrap = config.tag_wrap
   const content_wrap = config.content_wrap
-  const ignore_with = config.ignore_with
-  const placeholder_template = `-${ignore_with}`
   const strict = config.strict
 
   /* Track current number of indentations needed. */
@@ -105,12 +83,7 @@ const process = (config) => {
     let current_line_value = source.value
 
     const is_ignored_content =
-      current_line_value.startsWith(placeholder_template + "lt--") ||
-      current_line_value.startsWith(placeholder_template + "gt--") ||
-      current_line_value.startsWith(placeholder_template + "nl--") ||
-      current_line_value.startsWith(placeholder_template + "cr--") ||
-      current_line_value.startsWith(placeholder_template + "ws--") ||
-      current_line_value.startsWith(placeholder_template + "tab--")
+      current_line_value.startsWith('___HTMLFY_SPECIAL_IGNORE_MARKER_')
 
     let subtrahend = 0
     const prev_line_data = convert.line[index - 1]
@@ -128,8 +101,12 @@ const process = (config) => {
     if (prev_line_value.trim().startsWith("<!doctype")) subtrahend++
     /* prevLine is a comment. */
     if (prev_line_value.trim().startsWith("<!--")) subtrahend++
-    /* prevLine is a self-closing tag. */
-    if (prev_line_value.trim().endsWith("/>")) subtrahend++
+    /* prevLine is a void element. */
+    if (
+      prev_line_value.trim().endsWith("/>") // native self-closing
+      ||
+      prev_line_value.trim().endsWith(constants.SELF_CLOSING_PLACEHOLDER) // synthetic self-closing
+    ) subtrahend++
     /* prevLine is a closing tag. */
     if (prev_line_value.trim().startsWith("</")) subtrahend++
     /* prevLine is text. */
@@ -145,8 +122,6 @@ const process = (config) => {
     /**
      * Starts with a single punctuation character.
      * Add punctuation to end of previous line.
-     * 
-     * TODO - Implement inline groups instead?
      */
     if (source.type === 'text' && /^[!,;\.]/.test(current_line_value)) {
       if (current_line_value.length === 1) {
@@ -172,6 +147,9 @@ const process = (config) => {
 
       let result = current_line_value
 
+      /* Remove self-closing placeholder, if needed. */
+      result = unsetSelfClosing(result)
+
       if (
         source.type === 'text' && 
         content_wrap > 0 && 
@@ -185,8 +163,8 @@ const process = (config) => {
         result.length > tag_wrap &&
         tag_regex.test(result)
       ) {
-        tag_regex.lastIndex = 0; // Reset stateful regex
-        attribute_regex.lastIndex = 0; // Reset stateful regex
+        tag_regex.lastIndex = 0 // Reset stateful regex
+        attribute_regex.lastIndex = 0 // Reset stateful regex
 
         const tag_parts = result.split(attribute_regex).filter(Boolean)
 
@@ -202,9 +180,9 @@ const process = (config) => {
 
           const tag_name_match = tag_parts[0].match(/<([A-Za-z_:-]+)/)
           const tag_name = tag_name_match ? tag_name_match[1] : ""
-          const is_void = VOID_ELEMENTS.includes(tag_name)
+          const is_self_closing = tag_parts.at(-1)?.endsWith("/>") && VOID_ELEMENTS.includes(tag_name)
           const closing_part = tag_parts[1].trim()
-          const closing_padding = padding + (strict && is_void ? " " : "") // Add space if void/strict
+          const closing_padding = padding + (strict && is_self_closing ? " " : "")
 
           wrapped_tag += closing_padding + closing_part
 
@@ -229,13 +207,20 @@ const process = (config) => {
   if (tag_wrap > 0) final_html = protectAttributes(final_html)
 
   /* Extra preserve wrapped content. */
-  if (content_wrap > 0 && /\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n/.test(final_html))
+  if (content_wrap > 0 && new RegExp(`/\\n[ ]*[^\\n]*${constants.CONTENT_IGNORE_PLACEHOLDER}[^\\n]*\\n/`).test(final_html))
     final_html = finalProtectContent(final_html)
 
   /* Remove line returns, tabs, and consecutive spaces within html elements or their content. */
   final_html = final_html.replace(
-    /<(?<Element>.+).*>[^<]*?[^><\/\s][^<]*?<\/{1}\k<Element>|<script[^>]*>\s+<\/script>|<(\w+)>\s+<\/(\w+)|<(?:([\w:\._-]+)|([\w:\._-]+)[^>]*[^\/])>\s+<\/([\w:\._-]+)>/g,
-    match => match.replace(/\n|\t|\s{2,}/g, '')
+    /<(?<Element>[^>\s]+)[^>]*>[^<]*?[^><\/\s][^<]*?<\/\k<Element>>|<script[^>]*>[\s]*<\/script>|<([\w:\._-]+)([^>]*)><\/\2>|<([\w:\._-]+)([^>]*)>[\s]+<\/\4>/g,
+    match => {
+      // Check if this contains placeholder
+      if (match.includes(constants.SELF_CLOSING_PLACEHOLDER) || match.includes(constants.CONTENT_IGNORE_PLACEHOLDER)) {
+        return match // Don't modify if it contains the placeholder
+      }
+
+      return match.replace(/\n|\t|\s{2,}/g, '')
+    }
   )
 
   /* Revert wrapped content. */
@@ -268,12 +253,17 @@ export const prettify = (html, config) => {
   /* Return content as-is if it does not contain any HTML elements. */
   if (!checked_html && !isHtml(html)) return html
 
-  const validated_config = config ? validateConfig(config) : { ...CONFIG }
+  /* Runs setState for config. */
+  const validated_config = validateConfig(config || {})
+
   const ignore = validated_config.ignore.length > 0
+
+  /* Allows you to trimify before ignoring. */
+  if (validated_config.trim.length > 0) html = trimify(html, validated_config.trim)
 
   /* Extract ignored elements. */
   if (!ignored && ignore) {
-    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html, validated_config);
+    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html)
     html = html_with_markers
     ignore_map = extracted_map
     reinsert_ignored = true
@@ -282,8 +272,12 @@ export const prettify = (html, config) => {
   /* Preserve html text within attribute values. */
   html = setIgnoreAttribute(html)
 
-  html = preprocess(html)
-  html = process(validated_config)
+  /* Insert placeholder for void elements that aren't self-closing. */
+  html = setSelfClosing(html)
+
+  html = minify(html)
+  enqueue(html)
+  html = process()
 
   /* Revert html text within attribute values. */
   html = unsetIgnoreAttribute(html)

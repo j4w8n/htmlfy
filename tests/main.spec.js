@@ -28,34 +28,42 @@ title="We need your email for verification." name="email" required><!--    This 
 <link:test>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</link:test>
 <mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</mg-card>`
 
-const entify_html = `<textarea  >
+const single_textarea_html = `<   textarea  >
 
 Did   you know that 3 >   2?
 
 This is another paragraph.   
 
 
-</textarea><textarea class="  more  stuff  ">    </textarea>`
+</  textarea   >`
+const textarea_html = `<   textarea  >
+
+Did   you know that 3 >   2?
+
+This is another paragraph.   
+
+
+</  textarea   ><textarea class="  more  stuff  ">    </textarea>`
 
 const pretty_html = `<form id="3">
   <!-- This is a comment. -->
   <!-- This is a second comment. -->
   <label for="email-0">What's your email?</label>
-  <input id="email-0" type="email" title="We need your email for verification." name="email" required />
+  <input id="email-0" type="email" title="We need your email for verification." name="email" required>
   <!-- This is another comment. -->
   <label for="1">What fruits do you like?</label>
   <fieldset id="1">
-    <input id="fruits-1-0" type="checkbox" name="fruits" value="apples" />
+    <input id="fruits-1-0" type="checkbox" name="fruits" value="apples">
     <label for="fruits-1-0">Apples</label>
-    <br />
+    <br>
     <div>
       <!-- This is an embedded comment. -->
     </div>
-    <input id="fruits-1-1" type="checkbox" name="fruits" value="grapes" />
+    <input id="fruits-1-1" type="checkbox" name="fruits" value="grapes">
     <label for="fruits-1-1">Grapes</label>
-    <br />
+    <br>
   </fieldset>
-  <br />
+  <br>
   <name:test></name:test>
   <link:test>
     <div>Hello There</div>
@@ -138,21 +146,21 @@ const pretty_wrapped_html = `<form id="3">
     title="We need your email for verification."
     name="email"
     required
-  />
+  >
   <!-- This is another comment. -->
   <label for="1">What fruits do you like?</label>
   <fieldset id="1">
-    <input id="fruits-1-0" type="checkbox" name="fruits" value="apples" />
+    <input id="fruits-1-0" type="checkbox" name="fruits" value="apples">
     <label for="fruits-1-0">Apples</label>
-    <br />
+    <br>
     <div>
       <!-- This is an embedded comment. -->
     </div>
-    <input id="fruits-1-1" type="checkbox" name="fruits" value="grapes" />
+    <input id="fruits-1-1" type="checkbox" name="fruits" value="grapes">
     <label for="fruits-1-1">Grapes</label>
-    <br />
+    <br>
   </fieldset>
-  <br />
+  <br>
   <name:test></name:test>
   <link:test>
     <div>Hello There</div>
@@ -195,21 +203,21 @@ const pretty_wrapped_tab4_html = `<form id="3">
         title="We need your email for verification."
         name="email"
         required
-    />
+    >
     <!-- This is another comment. -->
     <label for="1">What fruits do you like?</label>
     <fieldset id="1">
-        <input id="fruits-1-0" type="checkbox" name="fruits" value="apples" />
+        <input id="fruits-1-0" type="checkbox" name="fruits" value="apples">
         <label for="fruits-1-0">Apples</label>
-        <br />
+        <br>
         <div>
             <!-- This is an embedded comment. -->
         </div>
-        <input id="fruits-1-1" type="checkbox" name="fruits" value="grapes" />
+        <input id="fruits-1-1" type="checkbox" name="fruits" value="grapes">
         <label for="fruits-1-1">Grapes</label>
-        <br />
+        <br>
     </fieldset>
-    <br />
+    <br>
     <name:test></name:test>
     <link:test>
         <div>Hello There</div>
@@ -296,7 +304,8 @@ const pretty_wrapped_strict_html = `<form id="3">
 
 const closify_html = `<form id="3">
 <!-- This is a comment. -->
-<!-- This is a second comment. --><br><input><br><input><link:test></link:test></form>`
+<form id="test" />
+<!-- This is a second comment. --><br><input class="hello"><br><input><link:test></link:test></form>`
 
 const config_html = `<form id="3">
 <!-- This is a comment. -->
@@ -366,7 +375,7 @@ const standalone_pretty_input_wrap = `<input
   type="checkbox"
   name="fruits"
   value="apples"
-/>`
+>`
 
 const attribute_with_html_crazy_name = '<cus---t0m...element___ boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>."></cus---t0m...element___>'
 const attribute_with_html_crazy_name_tag_wrap = '<cus---t0m...element___ boolean text="hello" blu="blu bli bla blo" number="42" html-content="Help text with html <b>bold</b>, <em>italic</em>."></cus---t0m...element___>'
@@ -622,17 +631,14 @@ test('Sole namespaced custom element is HTML', () => {
 })
 
 test('Trailing plaintext sibling', () => {
-  // @ts-ignore // convert to number in v0.9.0
-  expect(prettify(trailing_plaintext_sibling, { tag_wrap: true })).toBe(pretty_trailing_plaintext_sibling)
+  expect(prettify(trailing_plaintext_sibling, { tag_wrap: 80 })).toBe(pretty_trailing_plaintext_sibling)
 })
 
 test('Leading plaintext sibling', () => {
-  // @ts-ignore // convert to number in v0.9.0
-  expect(prettify(leading_plaintext_sibling, { tag_wrap: true })).toBe(pretty_leading_plaintext_sibling)
+  expect(prettify(leading_plaintext_sibling, { tag_wrap: 80 })).toBe(pretty_leading_plaintext_sibling)
 })
 
 test('Surrounded plaintext sibling', () => {
-  // @ts-ignore // convert to number in v0.9.0
   expect(prettify(surrounded_plaintext_sibling)).toBe(pretty_surrounded_plaintext_sibling)
 })
 
@@ -647,8 +653,8 @@ test('Custom elements with heavy plaintext nesting', () => {
 test('Trimify', () => {
   expect(trimify(trim_leading_whitespace, ['div'])).toBe('<div>Hello</div>')
   expect(trimify(trim_trailing_whitespace, ['div'])).toBe('<div>Hello</div>')
-  expect(prettify(entify_html, { trim: [ 'textarea' ]})).toBe(
-    `<textarea>Did&nbsp;&nbsp;&nbsp;you&nbsp;know&nbsp;that&nbsp;3&nbsp;&gt;&nbsp;&nbsp;&nbsp;2?&#10;&#10;This&nbsp;is&nbsp;another&nbsp;paragraph.</textarea>
+  expect(prettify(textarea_html)).toBe(
+    `<textarea>Did you know that 3 > 2? This is another paragraph.</textarea>
 <textarea class="more stuff"></textarea>`
   )
 })
@@ -666,8 +672,7 @@ test('Prettify with strict HTML', () => {
 })
 
 test('Prettify with tag wrap', () => {
-  // @ts-ignore // convert to number in v0.9.0
-  expect(prettify(ugly_html, { ...common_config, tag_wrap: true })).toBe(pretty_wrapped_html)
+  expect(prettify(ugly_html, { ...common_config, tag_wrap: 80 })).toBe(pretty_wrapped_html)
 })
 
 test('Prettify with content wrap', () => {
@@ -675,13 +680,11 @@ test('Prettify with content wrap', () => {
 })
 
 test('Prettify with tag wrap and tab size', () => {
-  // @ts-ignore // convert to number in v0.9.0
-  expect(prettify(ugly_html, { ...common_config, tag_wrap: true, tab_size: 4 })).toBe(pretty_wrapped_tab4_html)
+  expect(prettify(ugly_html, { ...common_config, tag_wrap: 80, tab_size: 4 })).toBe(pretty_wrapped_tab4_html)
 })
 
 test('Prettify with tag wrap and strict HTML', () => {
-  // @ts-ignore // convert to number in v0.9.0
-  expect(prettify(ugly_html, { ...common_config, strict: true, tag_wrap: true })).toBe(pretty_wrapped_strict_html)
+  expect(prettify(ugly_html, { ...common_config, strict: true, tag_wrap: 80 })).toBe(pretty_wrapped_strict_html)
 })
 
 test('Prettify with empty attributes', () => {
@@ -689,13 +692,11 @@ test('Prettify with empty attributes', () => {
 })
 
 test('Standalone tag wrap', () => {
-  // @ts-ignore // convert to number in v0.9.0
-  expect(prettify(standalone_tag_wrap, { tag_wrap: true })).toBe(standalone_pretty_tag_wrap)
+  expect(prettify(standalone_tag_wrap, { tag_wrap: 80 })).toBe(standalone_pretty_tag_wrap)
 })
 
 test('Standalone input wrap', () => {
-  // @ts-ignore // convert to number in v0.9.0
-  expect(prettify(standalone_input_wrap, { tag_wrap: true })).toBe(standalone_pretty_input_wrap)
+  expect(prettify(standalone_input_wrap, { tag_wrap: 80 })).toBe(standalone_pretty_input_wrap)
 })
 
 test('Attribute with html text for value', () => {
@@ -703,8 +704,7 @@ test('Attribute with html text for value', () => {
 })
 
 test('Tag wrapped attribute with html text for value', () => {
-  // @ts-ignore // convert to number in v0.9.0
-  expect(prettify(attribute_with_hyphen_tag_wrap, { tag_wrap: true })).toBe(attribute_with_hyphen_pretty_tag_wrap)
+  expect(prettify(attribute_with_hyphen_tag_wrap, { tag_wrap: 80 })).toBe(attribute_with_hyphen_pretty_tag_wrap)
 })
 
 test('Void attribute with html text for value', () => {
@@ -749,7 +749,7 @@ test('Elements with multiple standalone attributes and tag wrap', () => {
 
 test('Minify', () => {
   expect(minify(pretty_html)).toBe(
-    `<form id="3"><!-- This is a comment. --><!-- This is a second comment. --><label for="email-0">What's your email?</label><input id="email-0" type="email" title="We need your email for verification." name="email" required /><!-- This is another comment. --><label for="1">What fruits do you like?</label><fieldset id="1"><input id="fruits-1-0" type="checkbox" name="fruits" value="apples" /><label for="fruits-1-0">Apples</label><br /><div><!-- This is an embedded comment. --></div><input id="fruits-1-1" type="checkbox" name="fruits" value="grapes" /><label for="fruits-1-1">Grapes</label><br /></fieldset><br /><name:test></name:test><link:test><div>Hello There</div></link:test><custom-element class="hello there world" style="margin-top: 12px; margin-left: 12px;"><div>Goodbye World</div></custom-element></form><link:test>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</link:test><mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</mg-card>`
+    `<form id="3"><!-- This is a comment. --><!-- This is a second comment. --><label for="email-0">What's your email?</label><input id="email-0" type="email" title="We need your email for verification." name="email" required><!-- This is another comment. --><label for="1">What fruits do you like?</label><fieldset id="1"><input id="fruits-1-0" type="checkbox" name="fruits" value="apples"><label for="fruits-1-0">Apples</label><br><div><!-- This is an embedded comment. --></div><input id="fruits-1-1" type="checkbox" name="fruits" value="grapes"><label for="fruits-1-1">Grapes</label><br></fieldset><br><name:test></name:test><link:test><div>Hello There</div></link:test><custom-element class="hello there world" style="margin-top: 12px; margin-left: 12px;"><div>Goodbye World</div></custom-element></form><link:test>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</link:test><mg-card>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</mg-card>`
   )
 })
 
@@ -789,8 +789,8 @@ text
 })
 
 test('Entify', () => {
-  expect(entify(entify_html)).toBe(
-    `<textarea  >&#10;&#10;Did&nbsp;&nbsp;&nbsp;you&nbsp;know&nbsp;that&nbsp;3&nbsp;&gt;&nbsp;&nbsp;&nbsp;2?&#10;&#10;This&nbsp;is&nbsp;another&nbsp;paragraph.&nbsp;&nbsp;&nbsp;&#10;&#10;&#10;</textarea><textarea class="  more  stuff  ">&nbsp;&nbsp;&nbsp;&nbsp;</textarea>`
+  expect(entify(textarea_html)).toBe(
+    `<   textarea  >&#10;&#10;Did&nbsp;&nbsp;&nbsp;you&nbsp;know&nbsp;that&nbsp;3&nbsp;&gt;&nbsp;&nbsp;&nbsp;2?&#10;&#10;This&nbsp;is&nbsp;another&nbsp;paragraph.&nbsp;&nbsp;&nbsp;&#10;&#10;&#10;</  textarea   ><textarea class="  more  stuff  ">&nbsp;&nbsp;&nbsp;&nbsp;</textarea>`
   )
 })
 
@@ -799,7 +799,7 @@ test('Entify with plain text', () => {
 })
 
 test('Entify with minify', () => {
-  expect(entify(entify_html, true)).toBe(
+  expect(entify(textarea_html, true)).toBe(
     `<textarea>&#10;&#10;Did&nbsp;&nbsp;&nbsp;you&nbsp;know&nbsp;that&nbsp;3&nbsp;&gt;&nbsp;&nbsp;&nbsp;2?&#10;&#10;This&nbsp;is&nbsp;another&nbsp;paragraph.&nbsp;&nbsp;&nbsp;&#10;&#10;&#10;</textarea><textarea class="more stuff">&nbsp;&nbsp;&nbsp;&nbsp;</textarea>`
   )
 })
@@ -808,12 +808,40 @@ test('Closify', () => {
   expect(closify(closify_html)).toBe(
 `<form id="3">
 <!-- This is a comment. -->
-<!-- This is a second comment. --><br /><input /><br /><input /><link:test></link:test></form>`
+<form id="test"></form>
+<!-- This is a second comment. --><br /><input class="hello" /><br /><input /><link:test></link:test></form>`
   )
 })
 
 test('Closify with HTML check', () => {
   expect(closify('No HTML')).toBe('No HTML')
+})
+
+test('Ignore textarea tag', () => {
+  expect(prettify(single_textarea_html, { ignore: [ 'textarea' ]})).toBe(
+    `<textarea>
+
+Did   you know that 3 >   2?
+
+This is another paragraph.   
+
+
+</textarea>`
+  )
+})
+
+test('Ignore consecutive textarea tags', () => {
+  expect(prettify(textarea_html, { ignore: [ 'textarea' ]})).toBe(
+    `<textarea>
+
+Did   you know that 3 >   2?
+
+This is another paragraph.   
+
+
+</textarea>
+<textarea class="more stuff">    </textarea>`
+  )
 })
 
 test('Ignore script tag', () => {
@@ -886,7 +914,7 @@ test('Default ignore_with in HTML', () => {
   <div>
     <br />
     <input />
-    <p>This contains &lt;angled&gt; brackets -_!i-£___£%_gt- and an unfortunate combination of characters</p>
+    <p>This contains &lt;angled&gt; brackets -${CONFIG.ignore_with}gt- and an unfortunate combination of characters</p>
     <input />
     <div></div>
   </div>
@@ -896,6 +924,10 @@ test('Default ignore_with in HTML', () => {
 
 test('Catches invalid ignore config', async () => {
   await expect(testConfig({ ignore: [ 'script', 1 ]})).rejects.toThrow('Ignore config must be an array of strings.')
+})
+
+test('Catches invalid ignore_with config', async () => {
+  await expect(testConfig({ ignore_with: '_hello_'})).rejects.toThrow('ignore_with cannot start with an underscore.')
 })
 
 test('Catches invalid trim config', async () => {
