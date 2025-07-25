@@ -1,13 +1,17 @@
 # htmlfy
-HTML formatter yo! Prettify, minify and more!
+HTML formatter yo!
 
-`htmlfy` is a fork of [html-formatter](https://github.com/uznam8x/html-formatter/tree/master). Some of the processing logic has been preserved, and full credit for that goes to the original author. I've made the following major enhancements.
+Prettier html, minified html, and a few more goodies.
+
+`htmlfy` is a fork of [html-formatter](https://github.com/uznam8x/html-formatter/tree/master). Some of the processing logic has been preserved, and full credit for that goes to the original author.
+
+I've made the following enhancements:
 
 - Fully typed
 - Converted to ESM
-- Introduced configuration options
-- Added support for custom HTML elements (web components)
-- Lots of refactoring
+- Configuration options
+- Support for custom HTML elements (web components)
+- Refactoring galore
 - Made it go brrr fast
 
 ## Install
@@ -79,7 +83,7 @@ console.log(closify(html))
 ```
 
 ### Entify
-A standalone function that enforces entity characters for textarea content. You can pass `minify` as `true` to minify the tags themselves. Note that this does not run the HTML through the `minify` function.
+A standalone function that enforces entity characters for textarea content. You can pass `true ` as the `minify` to minify the tags themselves. Note that this does not run the HTML through the `minify` function.
 
 ```js
 import { entify } from 'htmlfy'
@@ -94,7 +98,7 @@ This is another paragraph.
 </textarea><textarea class="  more  stuff  ">    </textarea>`
 console.log(entify(html, true))
 /*
-<main class="hello   there world"><div>Welcome to htmlfy!  </div></main><textarea>Did you know that 3 &gt; 2?&#13;&#13;This is another paragraph.</textarea><textarea class="more stuff"></textarea>
+<main class="hello   there world"><div>Welcome to htmlfy!  </div></main><textarea>&#10;&#10;Did&nbsp;&nbsp;&nbsp;you&nbsp;know&nbsp;that&nbsp;3&nbsp;&gt;&nbsp;&nbsp;&nbsp;2?&#10;&#10;This&nbsp;is&nbsp;another&nbsp;paragraph.&nbsp;&nbsp;&nbsp;&#10;&#10;&#10;</textarea><textarea class="more stuff">&nbsp;&nbsp;&nbsp;&nbsp;</textarea>
 */
 ```
 
