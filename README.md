@@ -1,4 +1,13 @@
 # htmlfy
+
+[![npm][1]][2] [![install size][3]][4] [![downloads][5]][2]
+
+[1]: https://img.shields.io/npm/v/htmlfy "htmlfy, npm badge"
+[2]: https://www.npmjs.com/package/htmlfy "htmlfy, npm link"
+[3]: https://packagephobia.now.sh/badge?p=htmlfy "htmlfy size, badge"
+[4]: https://packagephobia.now.sh/result?p=htmlfy "htmlfy size, link"
+[5]: https://badgen.now.sh/npm/dm/htmlfy "htmlfy downloads, badge"
+
 HTML formatter yo!
 
 Prettier html, minified html, and a few more goodies.
