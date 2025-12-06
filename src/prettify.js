@@ -132,6 +132,9 @@ const process = () => {
         output_lines[output_lines.length - 1] = 
           output_lines.at(-1) + current_line_value.charAt(0)
         current_line_value = current_line_value.slice(1).trim()
+
+        /* If nothing left after extracting punctuation, skip this line. */
+        if (current_line_value.length === 0) return
       }
     }
 

@@ -17,7 +17,7 @@ let ignore_map
  */
 export const minify = (html, config) => {
   let reinsert_ignored = false
-  const { checked_html, ignored } = getState()
+  const { checked_html, ignored, constants } = getState()
 
   if (!checked_html && !isHtml(html)) return html
 
@@ -48,6 +48,18 @@ export const minify = (html, config) => {
   // Collapse any remaining multiple spaces to single spaces.
   html = html.replace(/ {2,}/g, ' ')
 
+  // Protect space between text content and an opening tag (e.g., "text <a>")
+  html = html.replace(
+    /(\S) (<[a-zA-Z][a-zA-Z0-9_:-]*)/g,
+    `$1___MINIFY-PROTECTED-SPACE___$2`
+  )
+
+  // Protect space between a closing tag and text content (e.g., "</a> text")
+  html = html.replace(
+    /(<\/[a-zA-Z][a-zA-Z0-9_:-]*>) (\S)/g,
+    `$1___MINIFY-PROTECTED-SPACE___$2`
+  )
+
   // Remove specific single spaces between tags and whitespace within tags.
   html = html.replace(/ >/g, ">")   // <tag > -> <tag>
   html = html.replace(/ </g, "<")   // leading space before tag
@@ -55,6 +67,9 @@ export const minify = (html, config) => {
   html = html.replace(/< /g, "<")   // < tag> -> <tag>
   html = html.replace(/<\s+\//g, '</') // < /tag> -> </tag>
   html = html.replace(/<\/\s+/g, '</') // </ tag> -> </tag>
+
+  // Unprotect space around inner tags
+  html = html.replace(new RegExp('___MINIFY-PROTECTED-SPACE___', 'g'), ' ')
 
   // Trim spaces around equals signs in attributes (run before value trim)
   //    This handles `attr = "value"` -> `attr="value"`
