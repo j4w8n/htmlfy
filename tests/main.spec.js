@@ -505,7 +505,7 @@ const pretty_trailing_plaintext_sibling = `<mg-input-text
   <div>Hello</div>
   <mg-button slot="append-input" label="search">
     <mg-icon icon="magnifying-glass"></mg-icon>
-    Search
+     Search
   </mg-button>
 </mg-input-text>`
 const leading_plaintext_sibling = '<mg-input-text identifier="identifier" name="input-name" label="Label" type="search" icon="magnifying-glass" placeholder="placeholder" tooltip="This is a tooltip" help-text="Help text with html <b>bold</b>, <em>italic</em>."><div>Hello</div><mg-button slot="append-input" label="search"> Search<mg-icon icon="magnifying-glass"></mg-icon></mg-button></mg-input-text>'
@@ -527,7 +527,7 @@ const pretty_leading_plaintext_sibling = `<mg-input-text
 </mg-input-text>`
 const surrounded_plaintext_sibling = `<div>The panda <i>eats</i>, <i>shoots</i>, and <i>leaves</i>.</div>`
 const pretty_surrounded_plaintext_sibling = `<div>
-  The panda
+  The panda 
   <i>eats</i>,
   <i>shoots</i>,
   and
@@ -542,7 +542,7 @@ const pretty_heavy_plaintext = `<div>
 </div>
 <div>
   <i></i>
-  Simmer
+   Simmer
   <span>Down</span>
   Y'all
 </div>`
@@ -555,7 +555,7 @@ const pretty_custom_heavy_plaintext = `<name:test>
 </name:test>
 <link:test>
   <thing:one></thing:one>
-  Simmer
+   Simmer
   <thing:two>Down</thing:two>
   Y'all
 </link:test>`
@@ -584,6 +584,8 @@ const wrapped_content_wrap_siblings = `<div>
   occaecat cupidatat non proident, sunt in culpa qui officia
   deserunt mollit anim id est laborum.
 </div>`
+
+const preserve_whitespace_around_inner_tags = minify(`<p>Some text  <a-z target="_blank" rel="noopener noreferrer nofollow" href="mailto:firstname.lastname@domain.com">E-Mail Link</a-z> 's</p>`)
 
 const only_normal_element = "<div></div>"
 const only_void_element = '<input>'
@@ -786,6 +788,10 @@ text
   expect(minify(html_with_kbd, { ignore: [ 'kbd' ] })).toBe(html_with_kbd)
   expect(minify(html_with_var, { ignore: [ 'var' ] })).toBe(html_with_var)
   expect(minify(html_with_tt, { ignore: [ 'tt' ] })).toBe(html_with_tt)
+})
+
+test('Minify preserves whitespace around inner tags', () => {
+  expect(preserve_whitespace_around_inner_tags).toBe(`<p>Some text <a-z target="_blank" rel="noopener noreferrer nofollow" href="mailto:firstname.lastname@domain.com">E-Mail Link</a-z> 's</p>`)
 })
 
 test('Entify', () => {
