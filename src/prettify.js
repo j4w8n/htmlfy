@@ -76,7 +76,7 @@ const process = () => {
   /** @type string[] */
   const output_lines = []
   const tag_regex = /<[A-Za-z]+\b[^>]*(?:.|\n)*?\/?>/g /* Is opening tag or void element. */
-  const attribute_regex = /\s{1}[A-Za-z-]+(?:=".*?")?/g /* Matches all tag/element attributes. */
+  const attribute_regex = /\s{1}[A-Za-z:@#*?$()\[\].-]+(?:=".*?")?/g /* Matches all tag/element attributes. */
 
   /* Process lines and indent. */
   convert.line.forEach((source, index) => {
