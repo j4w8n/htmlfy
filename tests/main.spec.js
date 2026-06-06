@@ -399,6 +399,46 @@ const attribute_with_hyphen_pretty_tag_wrap = `<mg-blublu
   number="42"
   html-content="Help text with html <b>bold</b>, <em>italic</em>."
 ></mg-blublu>`
+const custom_attributes = '<div><input type="text" role="combobox" v-model="search" aria-haspopup="listbox" aria-autocomplete="list" :id="input_id" :placeholder="config.placeholder" :aria-expanded="is_expanded" :aria-controls="combobox_id" :aria-label="ariaLabel"></div>'
+const custom_attributes_pretty = `<div>
+  <input type="text" role="combobox" v-model="search" aria-haspopup="listbox" aria-autocomplete="list" :id="input_id" :placeholder="config.placeholder" :aria-expanded="is_expanded" :aria-controls="combobox_id" :aria-label="ariaLabel">
+</div>`
+const custom_attributes_tag_wrap = '<div type="text" role="combobox" v-model="search" aria-haspopup="listbox" aria-autocomplete="list" :id="input_id" :placeholder="config.placeholder" :aria-expanded="is_expanded" :aria-controls="combobox_id" :aria-label="ariaLabel"></div>'
+const custom_attributes_pretty_tag_wrap = `<div
+  type="text"
+  role="combobox"
+  v-model="search"
+  aria-haspopup="listbox"
+  aria-autocomplete="list"
+  :id="input_id"
+  :placeholder="config.placeholder"
+  :aria-expanded="is_expanded"
+  :aria-controls="combobox_id"
+  :aria-label="ariaLabel"
+></div>`
+const custom_attributes_void_tag_wrap = '<input type="text" role="combobox" v-model="search" aria-haspopup="listbox" aria-autocomplete="list" :id="input_id" :placeholder="config.placeholder" :aria-expanded="is_expanded" :aria-controls="combobox_id" :aria-label="ariaLabel" @something="hello" some.else="try" #some="bonjour" [some]="goodbye" (diff)="bonjour" @[eventName]="handler" #(eventTask)="wrap" *ngIf="visible" ?disabled="true" onClick$="true">'
+const custom_attributes_void_pretty_tag_wrap = `<input
+  type="text"
+  role="combobox"
+  v-model="search"
+  aria-haspopup="listbox"
+  aria-autocomplete="list"
+  :id="input_id"
+  :placeholder="config.placeholder"
+  :aria-expanded="is_expanded"
+  :aria-controls="combobox_id"
+  :aria-label="ariaLabel"
+  @something="hello"
+  some.else="try"
+  #some="bonjour"
+  [some]="goodbye"
+  (diff)="bonjour"
+  @[eventName]="handler"
+  #(eventTask)="wrap"
+  *ngIf="visible"
+  ?disabled="true"
+  onClick$="true"
+>`
 
 const regular_elements_with_simple_nesting = '<div identifier="identifier" message="This is a tooltip message"><icon icon="info-circle"></icon></div>'
 const regular_elements_pretty_with_simple_nesting = `<div identifier="identifier" message="This is a tooltip message">
@@ -705,8 +745,20 @@ test('Attribute with html text for value', () => {
   expect(prettify(attribute_with_hyphen)).toBe(attribute_with_hyphen_pretty)
 })
 
+test('Custom Attributes', () => {
+  expect(prettify(custom_attributes)).toBe(custom_attributes_pretty)
+})
+
 test('Tag wrapped attribute with html text for value', () => {
   expect(prettify(attribute_with_hyphen_tag_wrap, { tag_wrap: 80 })).toBe(attribute_with_hyphen_pretty_tag_wrap)
+})
+
+test('Tag wrapped element with custom attributes', () => {
+  expect(prettify(custom_attributes_tag_wrap, { tag_wrap: 80 })).toBe(custom_attributes_pretty_tag_wrap)
+})
+
+test('Tag wrapped void element with custom attributes', () => {
+  expect(prettify(custom_attributes_void_tag_wrap, { tag_wrap: 80 })).toBe(custom_attributes_void_pretty_tag_wrap)
 })
 
 test('Void attribute with html text for value', () => {
