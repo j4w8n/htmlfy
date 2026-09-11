@@ -1,6 +1,12 @@
 import { expect, test } from 'vitest'
 import { minify, prettify } from 'htmlfy'
-import { isHtml, setIgnoreAttribute, unsetIgnoreAttribute } from '../src/utils.js'
+import {
+  extractIgnoredBlocks,
+  isHtml,
+  reinsertIgnoredBlocks,
+  setIgnoreAttribute,
+  unsetIgnoreAttribute
+} from '../src/utils.js'
 
 test('Malformed opening tags are not HTML', () => {
   expect(isHtml(`<div ${'attribute '.repeat(10_000)}`)).toBeFalsy()
@@ -29,7 +35,33 @@ test('Prettify preserves many ignored blocks', () => {
   expect(prettify(html, { ignore: ['pre'] })).toBe(expected)
 })
 
+test('Ignored block extraction handles multiple tag names in any order', () => {
+  const html = '<main><pre> before <code>x</code> after </pre><code> y </code></main>'
+  const { html_with_markers, extracted_map } = extractIgnoredBlocks(html, ['code', 'pre'])
+
+  expect(extracted_map.size).toBe(2)
+  expect(reinsertIgnoredBlocks(html_with_markers, extracted_map)).toBe(html)
+})
+
+test('Unclosed ignored blocks remain unchanged', () => {
+  const html = '<main><pre>const value = "<unfinished";</main>'
+  const { html_with_markers, extracted_map } = extractIgnoredBlocks(html, ['pre'])
+
+  expect(html_with_markers).toBe(html)
+  expect(extracted_map.size).toBe(0)
+})
+
 test('Minify preserves a large textarea body', () => {
   const content = `  first line\n    second line ${'<b>text</b>'.repeat(50)}  `
   expect(minify(`<textarea>${content}</textarea>`)).toBe(`<textarea>${content.replace(/\s+/g, ' ')}</textarea>`)
+})
+
+test('Minify handles malformed tag-like text inside textarea content', () => {
+  const html = '<textarea>one < broken " quote\n  two</textarea>'
+  expect(minify(html)).toBe('<textarea>one < broken " quote two</textarea>')
+})
+
+test('Minify preserves textarea entity decoding behavior', () => {
+  const html = '<textarea>&lt;x&gt;&nbsp;&#10;&quot;q&quot;</textarea>'
+  expect(minify(html)).toBe('<textarea><x> "q"</textarea>')
 })

@@ -33,6 +33,7 @@ const cases = [
   { name: 'closify/realistic/100KB', input: () => makeRealisticHtml(100 * KB), iterations: 10, run: closify },
   { name: 'trimify/realistic/100KB', input: () => makeRealisticHtml(100 * KB), iterations: 10, run: html => trimify(html, ['p']) },
   { name: 'entify/textarea/100KB', input: () => `<textarea>${' '.repeat(100 * KB)}</textarea>`, iterations: 5, run: entify },
+  { name: 'minify/textarea/100KB', input: () => `<textarea>${' '.repeat(100 * KB)}</textarea>`, iterations: 5, run: minify },
   { name: 'minify/text-run/4KB', input: () => `<div>${'x'.repeat(4 * KB)}</div>`, iterations: 3, run: minify },
   { name: 'minify/text-run/8KB', input: () => `<div>${'x'.repeat(8 * KB)}</div>`, iterations: 3, run: minify },
   { name: 'minify/text-run/16KB', input: () => `<div>${'x'.repeat(16 * KB)}</div>`, iterations: 3, run: minify },

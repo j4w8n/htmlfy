@@ -514,62 +514,117 @@ export const wordWrap = (text, width, indent, constants = DEFAULT_CONSTANTS) => 
   return protectContent(result, constants)
 }
 
+const IGNORE_MARKER_PREFIX = "___HTMLFY_SPECIAL_IGNORE_MARKER_"
+const IGNORE_MARKER_REGEX = /___HTMLFY_SPECIAL_IGNORE_MARKER_\d+___/g
+const TEXTAREA_MARKER_PREFIX = "___HTMLFY_TEXTAREA_MARKER_"
+const TEXTAREA_MARKER_REGEX = /___HTMLFY_TEXTAREA_MARKER_\d+___/g
+
 /**
- * Extract any HTML blocks to be ignored,
- * and replace them with a placeholder
- * for re-insertion later.
- * 
+ * Extract the contents of matching elements in one traversal.
+ *
  * @param {string} html
- * @param {string[]} ignore
- * @returns {{ html_with_markers: string, extracted_map: Map<any,any> }}
+ * @param {Set<string>} names
+ * @param {string} marker_prefix
+ * @param {(content: string) => string} [transform]
+ * @returns {{ html_with_markers: string, extracted_map: Map<string,string> }}
  */
-export function extractIgnoredBlocks(html, ignore) {
-  let current_html = html
+const extractBlocks = (html, names, marker_prefix, transform = content => content) => {
   const extracted_blocks = new Map()
+  const chunks = []
   let marker_id = 0
-  const MARKER_PREFIX = "___HTMLFY_SPECIAL_IGNORE_MARKER_"
+  let previous_end = 0
 
-  for (const tag of ignore) {
-    /* Ensure tag is escaped if it can contain regex special chars. */
-    const safe_tag_name = tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")
+  /** @type {{ name: string, content_start: number } | undefined} */
+  let active_block
+  let tag_start = -1
+  let quote = ''
 
-    const regex = new RegExp(
-      `(<\\s*${safe_tag_name}[^>]*>)(.*?)(<\\s*\/\\s*${safe_tag_name}\\s*>)`,
-      "gs" // global and dotAll
-    )
+  for (let index = 0; index < html.length; index++) {
+    const character = html[index]
 
-    /** @type RegExpExecArray | null */
-    let match
+    if (active_block) {
+      if (character !== '<') continue
 
-    /**
-     * @type {{ start: number; end: number; marker: string }[]}
-     */
-    const replacements = []
+      let closing_index = index + 1
+      while (/\s/.test(html[closing_index] || '')) closing_index++
+      if (html[closing_index] !== '/') continue
 
-    while ((match = regex.exec(current_html)) !== null) {
-      const marker = `${MARKER_PREFIX}${marker_id++}___`
+      closing_index++
+      while (/\s/.test(html[closing_index] || '')) closing_index++
+      if (!html.startsWith(active_block.name, closing_index)) continue
 
-      /* Only store content, and minify tags later. */
-      extracted_blocks.set(marker, match[2])
-      
-      replacements.push({
-        start: match.index + match[1].length, // start of content
-        end: match.index + match[1].length + match[2].length, // end of content
-        marker: marker,
-      })
+      closing_index += active_block.name.length
+      while (/\s/.test(html[closing_index] || '')) closing_index++
+      if (html[closing_index] !== '>') continue
+
+      const marker = `${marker_prefix}${marker_id++}___`
+      chunks.push(html.slice(previous_end, active_block.content_start), marker)
+      extracted_blocks.set(marker, transform(html.slice(active_block.content_start, index)))
+      previous_end = index
+      active_block = undefined
+      index = closing_index
+      continue
     }
 
-    /* Apply replacements from the end to the beginning to keep indices valid. */
-    for (let i = replacements.length - 1; i >= 0; i--) {
-      const rep = replacements[i]
-      current_html =
-        current_html.substring(0, rep.start) +
-        rep.marker +
-        current_html.substring(rep.end)
+    if (tag_start === -1) {
+      if (character === '<') tag_start = index
+      continue
+    }
+
+    if (quote) {
+      if (character === quote) quote = ''
+      continue
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character
+    } else if (character === '<') {
+      tag_start = index
+    } else if (character === '>') {
+      const opening_tag = getOpeningTag(html.slice(tag_start, index + 1))
+      if (opening_tag && names.has(opening_tag.name)) {
+        active_block = { name: opening_tag.name, content_start: index + 1 }
+      }
+      tag_start = -1
     }
   }
 
-  return { html_with_markers: current_html, extracted_map: extracted_blocks }
+  if (extracted_blocks.size === 0)
+    return { html_with_markers: html, extracted_map: extracted_blocks }
+
+  chunks.push(html.slice(previous_end))
+  return { html_with_markers: chunks.join(''), extracted_map: extracted_blocks }
+}
+
+/**
+ * Extract any HTML blocks to be ignored,
+ * and replace them with a placeholder for re-insertion later.
+ *
+ * @param {string} html
+ * @param {string[]} ignore
+ * @returns {{ html_with_markers: string, extracted_map: Map<string,string> }}
+ */
+export function extractIgnoredBlocks(html, ignore) {
+  return extractBlocks(html, new Set(ignore), IGNORE_MARKER_PREFIX)
+}
+
+/**
+ * Protect textarea contents without expanding them into entities.
+ *
+ * @param {string} html
+ * @returns {{ html_with_markers: string, extracted_map: Map<string,string> }}
+ */
+export function extractTextareaBlocks(html) {
+  return extractBlocks(html, new Set(['textarea']), TEXTAREA_MARKER_PREFIX, content => content
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#10;/g, '\n')
+    .replace(/&#13;/g, '\r')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+  )
 }
 
 /**
@@ -580,12 +635,18 @@ export function extractIgnoredBlocks(html, ignore) {
  * @returns 
  */
 export function reinsertIgnoredBlocks(html_with_markers, extracted_map) {
-  let final_html = html_with_markers
+  return html_with_markers.replace(IGNORE_MARKER_REGEX, marker => extracted_map.get(marker) ?? marker)
+}
 
-  for (const [marker, original_block] of extracted_map) {
-    final_html = final_html.split(marker).join(original_block)
-  }
-  return final_html
+/**
+ * Re-insert protected textarea contents in one pass.
+ *
+ * @param {string} html_with_markers
+ * @param {Map<string,string>} extracted_map
+ * @returns {string}
+ */
+export function reinsertTextareaBlocks(html_with_markers, extracted_map) {
+  return html_with_markers.replace(TEXTAREA_MARKER_REGEX, marker => extracted_map.get(marker) ?? marker)
 }
 
 const void_element_regex = new RegExp(`<(${VOID_ELEMENTS.join("|")})(?:\\s(?:[^/>]|/(?!>))*)*>`, 'g')

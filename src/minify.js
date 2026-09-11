@@ -1,5 +1,12 @@
-import { dentify, entify } from "./entify.js"
-import { extractIgnoredBlocks, isHtml, reinsertIgnoredBlocks, transformOpeningTags, validateConfig } from "./utils.js"
+import {
+  extractIgnoredBlocks,
+  extractTextareaBlocks,
+  isHtml,
+  reinsertIgnoredBlocks,
+  reinsertTextareaBlocks,
+  transformOpeningTags,
+  validateConfig
+} from "./utils.js"
 
 /**
  * Minify HTML using configuration already validated by the caller.
@@ -12,6 +19,8 @@ import { extractIgnoredBlocks, isHtml, reinsertIgnoredBlocks, transformOpeningTa
 const minifyHtml = (html, validated_config, extract_ignored) => {
   /** @type {Map<any,any> | undefined} */
   let ignore_map
+  /** @type {Map<string,string> | undefined} */
+  let textarea_map
   const ignore = validated_config.ignore.length > 0
 
   /* Extract ignored elements. Skipped if prettify has already ignored blocks. */
@@ -21,11 +30,12 @@ const minifyHtml = (html, validated_config, extract_ignored) => {
     ignore_map = extracted_map
   }
 
-  /**
-   * Ensure textarea content is protected
-   * before general minification.
-   */
-  html = entify(html, true)
+  /* Keep textarea markup out of the general minification passes. */
+  if (!validated_config.ignore.includes('textarea') && html.includes('textarea')) {
+    const { html_with_markers, extracted_map } = extractTextareaBlocks(html)
+    html = html_with_markers
+    textarea_map = extracted_map
+  }
 
   /* All other minification. */
   // Remove ALL newlines and tabs explicitly.
@@ -110,8 +120,9 @@ const minifyHtml = (html, validated_config, extract_ignored) => {
   // Final trim for the whole string
   html = html.trim()
 
-  /* Remove protective entities. */
-  html = dentify(html)
+  if (textarea_map) {
+    html = reinsertTextareaBlocks(html, textarea_map)
+  }
 
   /* Re-insert ignored elements. Skipped unless minify did the ignore. */
   if (ignore_map) {
