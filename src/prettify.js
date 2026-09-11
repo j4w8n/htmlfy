@@ -24,6 +24,7 @@ const TOKEN_DOCTYPE = 4
 const TOKEN_IGNORED = 8
 const TOKEN_SELF_CLOSING = 16
 const TOKEN_SYNTHETIC_SELF_CLOSING = 32
+const TOKEN_INLINE = 64
 
 /**
  * @typedef {object} Token
@@ -81,6 +82,52 @@ const enqueue = (html, constants) => {
 }
 
 /**
+ * Collapse the same simple element pairs handled by the final output regex.
+ *
+ * @param {Token[]} lines
+ * @returns {Token[]}
+ */
+const collapseInlineTokens = (lines) => {
+  /** @type {Token[]} */
+  const collapsed = []
+
+  for (let index = 0; index < lines.length; index++) {
+    const opening = lines[index]
+
+    if (opening.type === 'tag' && !(opening.flags & (
+      TOKEN_CLOSING |
+      TOKEN_COMMENT |
+      TOKEN_DOCTYPE |
+      TOKEN_SELF_CLOSING
+    ))) {
+      const name_match = opening.value.match(/^<([^>\s]+)[^>]*>$/)
+      const name = name_match?.[1]
+      const content = lines[index + 1]
+      const possible_closing = content?.type === 'text' ? lines[index + 2] : content
+
+      if (name && possible_closing?.value === `</${name}>`) {
+        const empty_pair = content?.type === 'tag' && /^[\w:._-]+$/.test(name)
+        const text_pair = content?.type === 'text' && /[^><\/\s]/.test(content.value)
+
+        if (empty_pair || text_pair) {
+          collapsed.push({
+            type: 'tag',
+            value: opening.value + (text_pair ? content.value.trim() : '') + possible_closing.value,
+            flags: TOKEN_INLINE,
+          })
+          index += text_pair ? 2 : 1
+          continue
+        }
+      }
+    }
+
+    collapsed.push(opening)
+  }
+
+  return collapsed
+}
+
+/**
  * Process enqueued content.
  *  
  * @param {Token[]} lines
@@ -122,6 +169,8 @@ const process = (lines, config, constants) => {
     if (prev_line_data && (prev_line_data.flags & TOKEN_SELF_CLOSING)) subtrahend++
     /* prevLine is a closing tag. */
     if (prev_line_data && (prev_line_data.flags & TOKEN_CLOSING)) subtrahend++
+    /* prevLine opens and closes on the same line. */
+    if (prev_line_data && (prev_line_data.flags & TOKEN_INLINE)) subtrahend++
     /* prevLine is text. */
     if (prev_line_data?.type === "text") subtrahend++
 
@@ -234,17 +283,19 @@ const process = (lines, config, constants) => {
     final_html = finalProtectContent(final_html, constants)
 
   /* Remove line returns, tabs, and consecutive spaces within html elements or their content. */
-  final_html = final_html.replace(
-    /<(?<Element>[^>\s]+)[^>]*>[^<]*?[^><\/\s][^<]*?<\/\k<Element>>|<script[^>]*>[\s]*<\/script>|<([\w:\._-]+)([^>]*)><\/\2>|<([\w:\._-]+)([^>]*)>[\s]+<\/\4>/g,
-    match => {
-      // Check if this contains placeholder
-      if (match.includes(constants.SELF_CLOSING_PLACEHOLDER) || match.includes(constants.CONTENT_IGNORE_PLACEHOLDER)) {
-        return match // Don't modify if it contains the placeholder
-      }
+  if (tag_wrap > 0 || content_wrap > 0) {
+    final_html = final_html.replace(
+      /<(?<Element>[^>\s]+)[^>]*>[^<]*?[^><\/\s][^<]*?<\/\k<Element>>|<script[^>]*>[\s]*<\/script>|<([\w:\._-]+)([^>]*)><\/\2>|<([\w:\._-]+)([^>]*)>[\s]+<\/\4>/g,
+      match => {
+        // Check if this contains placeholder
+        if (match.includes(constants.SELF_CLOSING_PLACEHOLDER) || match.includes(constants.CONTENT_IGNORE_PLACEHOLDER)) {
+          return match // Don't modify if it contains the placeholder
+        }
 
-      return match.replace(/\n|\t|\s{2,}/g, '')
-    }
-  )
+        return match.replace(/\n|\t|\s{2,}/g, '')
+      }
+    )
+  }
 
   /* Revert wrapped content. */
   if (content_wrap > 0) final_html = unprotectContent(final_html, constants)
@@ -298,7 +349,9 @@ export const prettify = (html, config) => {
   html = setSelfClosing(html, constants)
 
   html = minifyKnownHtml(html, validated_config)
-  const lines = enqueue(html, constants)
+  let lines = enqueue(html, constants)
+  if (validated_config.tag_wrap === 0 && validated_config.content_wrap === 0)
+    lines = collapseInlineTokens(lines)
   html = process(lines, validated_config, constants)
 
   /* Revert html text within attribute values. */

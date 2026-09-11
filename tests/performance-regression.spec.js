@@ -59,6 +59,20 @@ test('Prettify preserves token classification and wrapping behavior', () => {
 </main>`)
 })
 
+test('Prettify collapses only eligible inline elements', () => {
+  const html = '<main><p>/</p><p>text</p><div>   </div><script> </script><x-item>custom</x-item></main>'
+
+  expect(prettify(html)).toBe(`<main>
+  <p>
+    /
+  </p>
+  <p>text</p>
+  <div></div>
+  <script></script>
+  <x-item>custom</x-item>
+</main>`)
+})
+
 test('Prettify preserves many ignored blocks', () => {
   const block = '<pre>  const value = "a  b";\n    console.log(value);\n</pre>'
   const html = `<main>${block.repeat(25)}</main>`
