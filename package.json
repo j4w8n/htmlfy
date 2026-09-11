@@ -5,6 +5,7 @@
 	"main": "./src/exports/index.js",
 	"scripts": {
 		"benchmark": "bun benchmarks/run.js",
+		"benchmark:compare": "bun benchmarks/compare.js",
 		"check": "tsc",
 		"test": "vitest",
 		"test:run": "vitest run"

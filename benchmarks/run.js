@@ -1,9 +1,15 @@
 import { writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { performance } from 'node:perf_hooks'
-import { closify, entify, minify, prettify, trimify } from '../src/exports/index.js'
-import { isHtml } from '../src/utils.js'
+
+const source_root = process.env.HTMLFY_SOURCE_ROOT
+const source_url = source_root
+  ? pathToFileURL(resolve(source_root, 'src')).href
+  : new URL('../src', import.meta.url).href
+const { closify, entify, minify, prettify, trimify } = await import(`${source_url}/exports/index.js`)
+const { isHtml } = await import(`${source_url}/utils.js`)
 
 const KB = 1024
 const MB = 1024 * KB
@@ -81,6 +87,7 @@ const runCase = (benchmark) => {
     name: benchmark.name,
     input_bytes,
     output_bytes: Buffer.byteLength(String(output)),
+    output_hash: Bun.hash(String(output)).toString(16),
     iterations: benchmark.iterations,
     cold_ms: round(cold_ms),
     median_ms: round(median_ms),
@@ -132,6 +139,7 @@ if (selected_case) {
       generated_at: new Date().toISOString(),
       runtime: typeof Bun === 'undefined' ? `node-${process.version}` : `bun-${Bun.version}`,
       platform: `${process.platform}-${process.arch}`,
+      source_root: source_root || fileURLToPath(new URL('..', import.meta.url)),
       results,
     }, null, 2)}\n`)
     console.log(`Saved benchmark results to ${output_path}`)
