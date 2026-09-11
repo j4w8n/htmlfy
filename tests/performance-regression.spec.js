@@ -22,6 +22,17 @@ test('Minify trims only quoted attribute values', () => {
   expect(minify(html)).toBe(`<div title="1>0" data-value='<span>value</span>'>content= " unchanged "</div>`)
 })
 
+test('Minify normalizes inter-tag and text whitespace', () => {
+  const html = `<main>\n\t  <p>alpha  beta <span>inside</span> after</p>\n\t</main>`
+  expect(minify(html)).toBe('<main><p>alpha beta <span>inside</span> after</p></main>')
+})
+
+test('Minify normalizes both spaced closing-tag forms', () => {
+  expect(minify('<main><div>one< /div><p>two</ p><span>three< / span></main>')).toBe(
+    '<main><div>one</div><p>two</p><span>three</span></main>'
+  )
+})
+
 test('Attribute protection preserves quoted HTML', () => {
   const html = `<custom-element content='<b>bold</b>' title="1 > 0"></custom-element>`
   expect(unsetIgnoreAttribute(setIgnoreAttribute(html))).toBe(html)
