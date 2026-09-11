@@ -2,6 +2,89 @@ import { CONFIG, VOID_ELEMENTS } from './constants.js'
 import { getState, setState } from './state.js'
 
 /**
+ * Visit complete tags without treating brackets inside quoted attributes as boundaries.
+ * Returning true from the visitor stops the scan.
+ *
+ * @param {string} content
+ * @param {(tag: string, start: number, end: number) => boolean | void} visitor
+ * @returns {boolean}
+ */
+const scanTags = (content, visitor) => {
+  let tag_start = -1
+  let quote = ''
+
+  for (let index = 0; index < content.length; index++) {
+    const character = content[index]
+
+    if (tag_start === -1) {
+      if (character === '<') tag_start = index
+      continue
+    }
+
+    if (quote) {
+      if (character === quote) quote = ''
+      continue
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character
+    } else if (character === '<') {
+      tag_start = index
+    } else if (character === '>') {
+      if (visitor(content.slice(tag_start, index + 1), tag_start, index + 1)) return true
+      tag_start = -1
+    }
+  }
+
+  return false
+}
+
+/**
+ * Parse the name of an opening tag and return its end offset within the tag.
+ *
+ * @param {string} tag
+ * @returns {{ name: string, name_end: number } | undefined}
+ */
+const getOpeningTag = (tag) => {
+  if (!/[A-Za-z]/.test(tag[1] || '')) return
+
+  let name_end = 2
+  while (name_end < tag.length && !/[\s/>]/.test(tag[name_end])) name_end++
+
+  const name = tag.slice(1, name_end)
+  if (!/^[A-Za-z][A-Za-z0-9:._-]*$/.test(name)) return
+
+  return { name, name_end }
+}
+
+/**
+ * Transform complete opening tags while preserving all content between them.
+ *
+ * @param {string} content
+ * @param {(tag: string, name: string, name_end: number) => string} transform
+ * @returns {string}
+ */
+export const transformOpeningTags = (content, transform) => {
+  const chunks = []
+  let previous_end = 0
+
+  scanTags(content, (tag, start, end) => {
+    const opening_tag = getOpeningTag(tag)
+    if (!opening_tag) return
+
+    chunks.push(
+      content.slice(previous_end, start),
+      transform(tag, opening_tag.name, opening_tag.name_end)
+    )
+    previous_end = end
+  })
+
+  if (chunks.length === 0) return content
+  chunks.push(content.slice(previous_end))
+  return chunks.join('')
+}
+
+/**
  * Checks if content contains at least one HTML element or custom HTML element.
  * 
  * The first regex matches void and self-closing elements.
@@ -26,9 +109,30 @@ import { getState, setState } from './state.js'
 export const isHtml = (content) => {
   setState({ checked_html: true })
 
-  return /<(?:[A-Za-z]+[A-Za-z0-9]*)(?:\s+.*?)*?\/{0,1}>/.test(content) ||
-  /<(?<Element>(?:[A-Za-z]+[A-Za-z0-9]*:)?(?:[A-Za-z]+[A-Za-z0-9]*))(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content) || 
-  /<(?<Element>(?:[a-z][a-z0-9._]*:)?[a-z][a-z0-9._]*-[a-z0-9._-]+)(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content)
+  const paired_elements = new Set()
+  const standard_element = /^[A-Za-z][A-Za-z0-9]*$/
+  const namespaced_element = /^(?:[A-Za-z][A-Za-z0-9]*:)[A-Za-z][A-Za-z0-9]*$/
+  const custom_element = /^(?:[a-z][a-z0-9._]*:)?[a-z][a-z0-9._]*-[a-z0-9._-]+$/
+
+  return scanTags(content, (tag) => {
+    if (tag.startsWith('</')) {
+      const name = tag.slice(2, -1)
+      return paired_elements.has(name)
+    }
+
+    const opening_tag = getOpeningTag(tag)
+    if (!opening_tag) return false
+
+    const suffix_start = tag[opening_tag.name_end]
+    if (!(suffix_start === '>' || /\s/.test(suffix_start) || (suffix_start === '/' && tag[opening_tag.name_end + 1] === '>')))
+      return false
+
+    if (standard_element.test(opening_tag.name)) return true
+    if (namespaced_element.test(opening_tag.name) || custom_element.test(opening_tag.name))
+      paired_elements.add(opening_tag.name)
+
+    return false
+  })
 }
 
 /**
@@ -149,18 +253,36 @@ export const finalProtectContent = (html) => {
  * @returns {string}
  */
 export const setIgnoreAttribute = (html) => {
-  const regex = /<([A-Za-z][A-Za-z0-9]*|[a-z][a-z0-9._]*-[a-z0-9._-]+)((?:\s+[A-Za-z0-9_-]+="[^"]*"|\s*[a-z]*)*)>/g 
   const { constants } = getState()
 
-  html = html.replace(regex, (/** @type {string} */match, p1, p2) => {
-    return match.replace(p2, (match) => {
-      return match
-        .replace(/</g, constants.ATTRIBUTE_IGNORE_PLACEHOLDER + 'lt!')
-        .replace(/>/g, constants.ATTRIBUTE_IGNORE_PLACEHOLDER + 'gt!')
-    })
+  // Most documents do not contain HTML-like brackets inside attribute values.
+  if (!/=\s*(?:"[^"]*[<>][^"]*"|'[^']*[<>][^']*')/.test(html)) return html
+
+  return transformOpeningTags(html, (tag, name, name_end) => {
+    let quote = ''
+    let previous_end = 0
+    const chunks = []
+
+    for (let index = name_end; index < tag.length - 1; index++) {
+      const character = tag[index]
+
+      if (!quote && (character === '"' || character === "'")) {
+        quote = character
+      } else if (quote && character === quote) {
+        quote = ''
+      } else if (quote && (character === '<' || character === '>')) {
+        chunks.push(
+          tag.slice(previous_end, index),
+          constants.ATTRIBUTE_IGNORE_PLACEHOLDER + (character === '<' ? 'lt!' : 'gt!')
+        )
+        previous_end = index + 1
+      }
+    }
+
+    if (chunks.length === 0) return tag
+    chunks.push(tag.slice(previous_end))
+    return chunks.join('')
   })
-  
-  return html
 }
 
 /**

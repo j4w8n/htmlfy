@@ -1,5 +1,5 @@
 import { dentify, entify } from "./entify.js"
-import { extractIgnoredBlocks, isHtml, reinsertIgnoredBlocks, validateConfig } from "./utils.js"
+import { extractIgnoredBlocks, isHtml, reinsertIgnoredBlocks, transformOpeningTags, validateConfig } from "./utils.js"
 import { getState } from "./state.js"
 
 /**
@@ -76,16 +76,47 @@ export const minify = (html, config) => {
   html = html.replace(/ = /g, "=")
   // Consider safer alternatives if needed (e.g., / = "/g, '="')
 
-  // Trim whitespace inside attribute values
-  html = html.replace(
-    /([a-zA-Z0-9_-]+)=(['"])(.*?)\2/g,
-    (match, attr_name, quote, value) => {
-      // value.trim() handles both leading/trailing spaces
-      // and cases where the value is only whitespace (becomes empty string)
-      const trimmed_value = value.trim()
-      return `${attr_name}=${quote}${trimmed_value}${quote}`
-    }
-  )
+  // Trim whitespace inside quoted attribute values when any are padded.
+  if (/=["']\s|\s["']/.test(html)) {
+    html = transformOpeningTags(html, (tag, name, name_end) => {
+      const chunks = []
+      let previous_end = 0
+      let index = name_end
+
+      while (index < tag.length - 1) {
+        while (/\s/.test(tag[index] || '')) index++
+
+        const attribute_start = index
+        while (/[a-zA-Z0-9_-]/.test(tag[index] || '')) index++
+        if (index === attribute_start || tag[index] !== '=') {
+          index++
+          continue
+        }
+
+        const quote = tag[index + 1]
+        if (quote !== '"' && quote !== "'") {
+          index++
+          continue
+        }
+
+        const value_start = index + 2
+        const value_end = tag.indexOf(quote, value_start)
+        if (value_end === -1) break
+
+        const value = tag.slice(value_start, value_end)
+        const trimmed_value = value.trim()
+        if (trimmed_value !== value) {
+          chunks.push(tag.slice(previous_end, value_start), trimmed_value)
+          previous_end = value_end
+        }
+        index = value_end + 1
+      }
+
+      if (chunks.length === 0) return tag
+      chunks.push(tag.slice(previous_end))
+      return chunks.join('')
+    })
+  }
 
   // Final trim for the whole string
   html = html.trim()

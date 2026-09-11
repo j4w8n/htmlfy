@@ -1,14 +1,24 @@
 import { expect, test } from 'vitest'
 import { minify, prettify } from 'htmlfy'
-import { isHtml } from '../src/utils.js'
+import { isHtml, setIgnoreAttribute, unsetIgnoreAttribute } from '../src/utils.js'
 
 test('Malformed opening tags are not HTML', () => {
-  expect(isHtml(`<div ${'attribute '.repeat(12)}`)).toBeFalsy()
+  expect(isHtml(`<div ${'attribute '.repeat(10_000)}`)).toBeFalsy()
 })
 
 test('Minify preserves a long text node', () => {
-  const text = 'x'.repeat(4_096)
+  const text = 'x'.repeat(128 * 1_024)
   expect(minify(`<div>${text}</div>`)).toBe(`<div>${text}</div>`)
+})
+
+test('Minify trims only quoted attribute values', () => {
+  const html = `<div title="  1 > 0  " data-value='  <span>value</span>  '>content= " unchanged "</div>`
+  expect(minify(html)).toBe(`<div title="1>0" data-value='<span>value</span>'>content= " unchanged "</div>`)
+})
+
+test('Attribute protection preserves quoted HTML', () => {
+  const html = `<custom-element content='<b>bold</b>' title="1 > 0"></custom-element>`
+  expect(unsetIgnoreAttribute(setIgnoreAttribute(html))).toBe(html)
 })
 
 test('Prettify preserves many ignored blocks', () => {
