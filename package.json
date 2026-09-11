@@ -1,6 +1,6 @@
 {
 	"name": "htmlfy",
-	"version": "1.0.2",
+	"version": "1.1.0",
 	"description": "html formatter yo! Prettify or minify html.",
 	"main": "./src/exports/index.js",
 	"scripts": {
