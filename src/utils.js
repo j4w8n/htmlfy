@@ -1,5 +1,25 @@
 import { CONFIG, VOID_ELEMENTS } from './constants.js'
-import { getState, setState } from './state.js'
+
+/**
+ * @typedef {object} HtmlfyConstants
+ * @property {string} CONTENT_IGNORE_PLACEHOLDER
+ * @property {string} SELF_CLOSING_PLACEHOLDER
+ * @property {string} ATTRIBUTE_IGNORE_PLACEHOLDER
+ */
+
+/**
+ * Create the placeholders used during one formatting operation.
+ *
+ * @param {string} [ignore_with]
+ * @returns {HtmlfyConstants}
+ */
+export const createConstants = (ignore_with = CONFIG.ignore_with) => ({
+  CONTENT_IGNORE_PLACEHOLDER: `${ignore_with}_`,
+  SELF_CLOSING_PLACEHOLDER: `${ignore_with}/_>`,
+  ATTRIBUTE_IGNORE_PLACEHOLDER: `${ignore_with}=_`
+})
+
+const DEFAULT_CONSTANTS = createConstants()
 
 /**
  * Visit complete tags without treating brackets inside quoted attributes as boundaries.
@@ -46,12 +66,14 @@ const scanTags = (content, visitor) => {
  * @returns {{ name: string, name_end: number } | undefined}
  */
 const getOpeningTag = (tag) => {
-  if (!/[A-Za-z]/.test(tag[1] || '')) return
+  let name_start = 1
+  while (/\s/.test(tag[name_start] || '')) name_start++
+  if (!/[A-Za-z]/.test(tag[name_start] || '')) return
 
-  let name_end = 2
+  let name_end = name_start + 1
   while (name_end < tag.length && !/[\s/>]/.test(tag[name_end])) name_end++
 
-  const name = tag.slice(1, name_end)
+  const name = tag.slice(name_start, name_end)
   if (!/^[A-Za-z][A-Za-z0-9:._-]*$/.test(name)) return
 
   return { name, name_end }
@@ -107,8 +129,6 @@ export const transformOpeningTags = (content, transform) => {
  * @returns {boolean} A boolean.
  */
 export const isHtml = (content) => {
-  setState({ checked_html: true })
-
   const paired_elements = new Set()
   const standard_element = /^[A-Za-z][A-Za-z0-9]*$/
   const namespaced_element = /^(?:[A-Za-z][A-Za-z0-9]*:)[A-Za-z][A-Za-z0-9]*$/
@@ -176,27 +196,15 @@ const mergeObjects = (current, updates) => {
  * @returns {import('htmlfy').Config}
  */
 export const mergeConfig = (default_config, config) => {
-  const validated_config = mergeObjects(default_config, config)
-
-  /* Below `constants` prefixes and suffixes must be in sync with those in state.js */
-  setState({ 
-    config: validated_config,
-    constants: {
-      CONTENT_IGNORE_PLACEHOLDER: `${validated_config.ignore_with}_`,
-      SELF_CLOSING_PLACEHOLDER: `${validated_config.ignore_with}/_>`,
-      ATTRIBUTE_IGNORE_PLACEHOLDER: `${validated_config.ignore_with}=_`
-    }
-  })
-  return validated_config
+  return mergeObjects(default_config, config)
 }
 
 /**
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  */
-export const protectAttributes = (html) => {
-  const { constants } = getState()
-
+export const protectAttributes = (html, constants = DEFAULT_CONSTANTS) => {
   html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
     return match.replace(capture, (match) => {
       return match
@@ -211,11 +219,10 @@ export const protectAttributes = (html) => {
 
 /**
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  */
-export const protectContent = (html) => {
-  const { constants } = getState()
-
+export const protectContent = (html, constants = DEFAULT_CONSTANTS) => {
   return html
     .replace(/\n/g, constants.CONTENT_IGNORE_PLACEHOLDER + 'nl!')
     .replace(/\r/g, constants.CONTENT_IGNORE_PLACEHOLDER + 'cr!')
@@ -224,11 +231,11 @@ export const protectContent = (html) => {
 
 /**
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  */
-export const finalProtectContent = (html) => {
+export const finalProtectContent = (html, constants = DEFAULT_CONSTANTS) => {
   const regex = /\s*<([a-zA-Z0-9:-]+)[^>]*>\n\s*<\/\1>(?=\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n)(\n[ ]*\S[^\n]*\n)|<([a-zA-Z0-9:-]+)[^>]*>(?=\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n)(\n[ ]*\S[^\n]*\n\s*)<\/\3>/g 
-  const { constants } = getState()
 
   return html
     .replace(regex, (/** @type {string} */match, p1, p2, p3, p4) => {
@@ -249,12 +256,11 @@ export const finalProtectContent = (html) => {
 /**
  * Replace html brackets with ignore string.
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  * @returns {string}
  */
-export const setIgnoreAttribute = (html) => {
-  const { constants } = getState()
-
+export const setIgnoreAttribute = (html, constants = DEFAULT_CONSTANTS) => {
   // Most documents do not contain HTML-like brackets inside attribute values.
   if (!/=\s*(?:"[^"]*[<>][^"]*"|'[^']*[<>][^']*')/.test(html)) return html
 
@@ -308,11 +314,10 @@ export const trimify = (html, trim) => {
 
 /**
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  */
-export const unprotectAttributes = (html) => {
-  const { constants } = getState()
-
+export const unprotectAttributes = (html, constants = DEFAULT_CONSTANTS) => {
   html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
     return match.replace(capture, (match) => {
       return match
@@ -327,11 +332,10 @@ export const unprotectAttributes = (html) => {
 
 /**
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  */
-export const unprotectContent = (html) => {
-  const { constants } = getState()
-
+export const unprotectContent = (html, constants = DEFAULT_CONSTANTS) => {
   html = html.replace(new RegExp(`.*${constants.CONTENT_IGNORE_PLACEHOLDER}[a-z]{2}!.*`, "g"), (/** @type {string} */match) => {
     return match.replace(new RegExp(`${constants.CONTENT_IGNORE_PLACEHOLDER}[a-z]{2}!`, "g"), (match) => {
       return match
@@ -347,13 +351,13 @@ export const unprotectContent = (html) => {
 /**
  * Replace ignore string with html brackets.
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  * @returns {string}
  */
-export const unsetIgnoreAttribute = (html) => {
+export const unsetIgnoreAttribute = (html, constants = DEFAULT_CONSTANTS) => {
   /* Regex to find opening tags and capture their attributes. */
   const tagRegex = /<([\w:\-]+)([^>]*)>/g
-  const { constants } = getState()
   const escapedIgnoreString = constants.ATTRIBUTE_IGNORE_PLACEHOLDER.replace(
     /[-\/\\^$*+?.()|[\]{}]/g,
     "\\$&"
@@ -386,6 +390,8 @@ export const unsetIgnoreAttribute = (html) => {
  */
 export const validateConfig = (config) => {
   if (typeof config !== 'object') throw new Error('Config must be an object.')
+
+  config = { ...config }
   
   const default_config = { ...CONFIG }
 
@@ -400,7 +406,6 @@ export const validateConfig = (config) => {
   )
 
   if (config_empty) {
-    setState({ config: default_config })
     return default_config
   }
 
@@ -458,8 +463,9 @@ export const validateConfig = (config) => {
  * @param {string} text 
  * @param {number} width 
  * @param {string} indent
+ * @param {HtmlfyConstants} [constants]
  */
-export const wordWrap = (text, width, indent) => {
+export const wordWrap = (text, width, indent, constants = DEFAULT_CONSTANTS) => {
   const words = text.trim().split(/\s+/)
   
   if (words.length === 0 || (words.length === 1 && words[0] === ''))
@@ -505,7 +511,7 @@ export const wordWrap = (text, width, indent) => {
 
   const result = lines.join("\n")
 
-  return protectContent(result)
+  return protectContent(result, constants)
 }
 
 /**
@@ -513,18 +519,17 @@ export const wordWrap = (text, width, indent) => {
  * and replace them with a placeholder
  * for re-insertion later.
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {string[]} ignore
  * @returns {{ html_with_markers: string, extracted_map: Map<any,any> }}
  */
-export function extractIgnoredBlocks(html) {
-  setState({ ignored: true })
-  const config = (getState()).config
+export function extractIgnoredBlocks(html, ignore) {
   let current_html = html
   const extracted_blocks = new Map()
   let marker_id = 0
   const MARKER_PREFIX = "___HTMLFY_SPECIAL_IGNORE_MARKER_"
 
-  for (const tag of config.ignore) {
+  for (const tag of ignore) {
     /* Ensure tag is escaped if it can contain regex special chars. */
     const safe_tag_name = tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")
 
@@ -575,7 +580,6 @@ export function extractIgnoredBlocks(html) {
  * @returns 
  */
 export function reinsertIgnoredBlocks(html_with_markers, extracted_map) {
-  setState({ ignored: false })
   let final_html = html_with_markers
 
   for (const [marker, original_block] of extracted_map) {
@@ -590,12 +594,11 @@ const void_element_regex = new RegExp(`<(${VOID_ELEMENTS.join("|")})(?:\\s(?:[^/
  * Add a placeholder for void elements that are not self-closing.
  * This is for internal processing only.
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  * @returns 
  */
-export function setSelfClosing(html) {
-  const { constants } = getState()
-
+export function setSelfClosing(html, constants = DEFAULT_CONSTANTS) {
   return html.replace(
     // match only void elements that are not self-closing
     void_element_regex,
@@ -606,11 +609,10 @@ export function setSelfClosing(html) {
 /**
  * Remove internal placeholder for non-native self-closing void elements.
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  * @returns 
  */
-export function unsetSelfClosing(html) {
-  const { constants } = getState()
-
+export function unsetSelfClosing(html, constants = DEFAULT_CONSTANTS) {
   return html.replace(constants.SELF_CLOSING_PLACEHOLDER, ">")
 }

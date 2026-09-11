@@ -1,5 +1,6 @@
-import { minify } from './minify.js'
+import { minifyKnownHtml } from './minify.js'
 import { 
+  createConstants,
   extractIgnoredBlocks,
   finalProtectContent,
   isHtml, 
@@ -16,19 +17,6 @@ import {
   wordWrap
 } from './utils.js'
 import { VOID_ELEMENTS } from './constants.js'
-import { getState } from './state.js'
-
-/**
- * @type {{ line: Record<string,string>[] }}
- */
-const convert = {
-  line: []
-}
-
-/**
- * @type {Map<any,any>}
- */
-let ignore_map
 
 /**
  * Isolate tags, content, and comments.
@@ -38,33 +26,39 @@ let ignore_map
  *  [#-# : 0 : <div> : #-#]
  *  Hello World!
  *  [#-# : 1 : </div> : #-#]
+ * @returns {Record<string,string>[]}
  */
 const enqueue = (html) => {
-  convert.line = []
+  /** @type {Record<string,string>[]} */
+  const lines = []
   let i = -1
   /* Regex to find tags OR text content between tags. */
   const regex = /(<[^>]+>)|([^<]+)/g
 
   html.replace(regex, (match, c1, c2) => {
     if (c1) {
-      convert.line.push({ type: "tag", value: match })
+      lines.push({ type: "tag", value: match })
     } else if (c2 && c2.trim().length > 0) {
       /* It's text content (and not just whitespace). */
-      convert.line.push({ type: "text", value: match })
+      lines.push({ type: "text", value: match })
     }
 
     i++
     return `\n[#-# : ${i} : ${match} : #-#]\n`
   })
+
+  return lines
 }
 
 /**
  * Process enqueued content.
  *  
+ * @param {Record<string,string>[]} lines
+ * @param {import('htmlfy').Config} config
+ * @param {import('./utils.js').HtmlfyConstants} constants
  * @returns {string}
  */
-const process = () => {
-  const { config, constants } = getState()
+const process = (lines, config, constants) => {
   const step = " ".repeat(config.tab_size)
   const tag_wrap = config.tag_wrap
   const content_wrap = config.content_wrap
@@ -79,14 +73,14 @@ const process = () => {
   const attribute_regex = /\s{1}[A-Za-z:@#*?$()\[\].-]+(?:=".*?")?/g /* Matches all tag/element attributes. */
 
   /* Process lines and indent. */
-  convert.line.forEach((source, index) => {
+  lines.forEach((source, index) => {
     let current_line_value = source.value
 
     const is_ignored_content =
       current_line_value.startsWith('___HTMLFY_SPECIAL_IGNORE_MARKER_')
 
     let subtrahend = 0
-    const prev_line_data = convert.line[index - 1]
+    const prev_line_data = lines[index - 1]
     const prev_line_value = prev_line_data?.value ?? "" // Use empty string if no prev line
 
     /**
@@ -151,14 +145,14 @@ const process = () => {
       let result = current_line_value
 
       /* Remove self-closing placeholder, if needed. */
-      result = unsetSelfClosing(result)
+      result = unsetSelfClosing(result, constants)
 
       if (
         source.type === 'text' && 
         content_wrap > 0 && 
         result.length >= content_wrap
       ) {
-        result = wordWrap(result, content_wrap, padding)
+        result = wordWrap(result, content_wrap, padding, constants)
       }
       /* Wrap the attributes of open tags and void elements. */
       else if (
@@ -207,11 +201,11 @@ const process = () => {
   let final_html = output_lines.join("\n")
 
   /* Preserve wrapped attributes. */
-  if (tag_wrap > 0) final_html = protectAttributes(final_html)
+  if (tag_wrap > 0) final_html = protectAttributes(final_html, constants)
 
   /* Extra preserve wrapped content. */
   if (content_wrap > 0 && new RegExp(`/\\n[ ]*[^\\n]*${constants.CONTENT_IGNORE_PLACEHOLDER}[^\\n]*\\n/`).test(final_html))
-    final_html = finalProtectContent(final_html)
+    final_html = finalProtectContent(final_html, constants)
 
   /* Remove line returns, tabs, and consecutive spaces within html elements or their content. */
   final_html = final_html.replace(
@@ -227,10 +221,10 @@ const process = () => {
   )
 
   /* Revert wrapped content. */
-  if (content_wrap > 0) final_html = unprotectContent(final_html)
+  if (content_wrap > 0) final_html = unprotectContent(final_html, constants)
 
   /* Revert wrapped attributes. */
-  if (tag_wrap > 0) final_html = unprotectAttributes(final_html)
+  if (tag_wrap > 0) final_html = unprotectAttributes(final_html, constants)
 
   /* Remove self-closing nature of void elements. */
   if (strict) final_html = final_html.replace(/\s\/>|\/>/g, '>')
@@ -250,43 +244,42 @@ const process = () => {
  * @returns {string} A well-formed HTML string.
  */
 export const prettify = (html, config) => {
-  let reinsert_ignored = false
-  const { checked_html, ignored } = getState()
-
   /* Return content as-is if it does not contain any HTML elements. */
-  if (!checked_html && !isHtml(html)) return html
+  if (!isHtml(html)) return html
 
-  /* Runs setState for config. */
   const validated_config = validateConfig(config || {})
+  const constants = createConstants(validated_config.ignore_with)
 
   const ignore = validated_config.ignore.length > 0
+
+  /** @type {Map<any,any> | undefined} */
+  let ignore_map
 
   /* Allows you to trimify before ignoring. */
   if (validated_config.trim.length > 0) html = trimify(html, validated_config.trim)
 
   /* Extract ignored elements. */
-  if (!ignored && ignore) {
-    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html)
+  if (ignore) {
+    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html, validated_config.ignore)
     html = html_with_markers
     ignore_map = extracted_map
-    reinsert_ignored = true
   }
 
   /* Preserve html text within attribute values. */
-  html = setIgnoreAttribute(html)
+  html = setIgnoreAttribute(html, constants)
 
   /* Insert placeholder for void elements that aren't self-closing. */
-  html = setSelfClosing(html)
+  html = setSelfClosing(html, constants)
 
-  html = minify(html)
-  enqueue(html)
-  html = process()
+  html = minifyKnownHtml(html, validated_config)
+  const lines = enqueue(html)
+  html = process(lines, validated_config, constants)
 
   /* Revert html text within attribute values. */
-  html = unsetIgnoreAttribute(html)
+  html = unsetIgnoreAttribute(html, constants)
 
   /* Re-insert ignored elements. */
-  if (reinsert_ignored) {
+  if (ignore_map) {
     html = reinsertIgnoredBlocks(html, ignore_map)
   }
 

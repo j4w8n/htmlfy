@@ -1,35 +1,24 @@
 import { dentify, entify } from "./entify.js"
 import { extractIgnoredBlocks, isHtml, reinsertIgnoredBlocks, transformOpeningTags, validateConfig } from "./utils.js"
-import { getState } from "./state.js"
 
 /**
- * @type {Map<any,any>}
+ * Minify HTML using configuration already validated by the caller.
+ *
+ * @param {string} html
+ * @param {import('htmlfy').Config} validated_config
+ * @param {boolean} extract_ignored
+ * @returns {string}
  */
-let ignore_map
-
-/**
- * Creates a single-line HTML string
- * by removing line returns, tabs, and relevant spaces.
- * 
- * @param {string} html The HTML string to minify.
- * @param {import('htmlfy').UserConfig} [config] A user configuration object.
- * @returns {string} A minified HTML string.
- */
-export const minify = (html, config) => {
-  let reinsert_ignored = false
-  const { checked_html, ignored, constants } = getState()
-
-  if (!checked_html && !isHtml(html)) return html
-
-  const validated_config = config ? validateConfig(config) : (getState()).config
+const minifyHtml = (html, validated_config, extract_ignored) => {
+  /** @type {Map<any,any> | undefined} */
+  let ignore_map
   const ignore = validated_config.ignore.length > 0
 
   /* Extract ignored elements. Skipped if prettify has already ignored blocks. */
-  if (!ignored && ignore) {
-    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html)
+  if (extract_ignored && ignore) {
+    const { html_with_markers, extracted_map } = extractIgnoredBlocks(html, validated_config.ignore)
     html = html_with_markers
     ignore_map = extracted_map
-    reinsert_ignored = true
   }
 
   /**
@@ -125,9 +114,31 @@ export const minify = (html, config) => {
   html = dentify(html)
 
   /* Re-insert ignored elements. Skipped unless minify did the ignore. */
-  if (reinsert_ignored) {
+  if (ignore_map) {
     html = reinsertIgnoredBlocks(html, ignore_map)
   }
 
   return html
+}
+
+/**
+ * Minify HTML that has already been checked and had ignored blocks extracted.
+ *
+ * @param {string} html
+ * @param {import('htmlfy').Config} config
+ * @returns {string}
+ */
+export const minifyKnownHtml = (html, config) => minifyHtml(html, config, false)
+
+/**
+ * Creates a single-line HTML string
+ * by removing line returns, tabs, and relevant spaces.
+ *
+ * @param {string} html The HTML string to minify.
+ * @param {import('htmlfy').UserConfig} [config] A user configuration object.
+ * @returns {string} A minified HTML string.
+ */
+export const minify = (html, config) => {
+  if (!isHtml(html)) return html
+  return minifyHtml(html, validateConfig(config || {}), true)
 }
