@@ -25,7 +25,7 @@ I've made the following enhancements:
 
 ## Install
 
-`npm install htmlfy`
+`bun add htmlfy`
 
 ## API
 

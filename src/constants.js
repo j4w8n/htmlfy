@@ -18,7 +18,7 @@ export const VOID_ELEMENTS = [
 ]
 
 /**
- * Defined by state.js and configuration.
+ * Defined per formatting operation from configuration.
  * 
  * CONTENT_IGNORE_PLACEHOLDER
  * SELF_CLOSING_PLACEHOLDER

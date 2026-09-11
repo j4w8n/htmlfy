@@ -1,11 +1,14 @@
 {
 	"name": "htmlfy",
-	"version": "1.0.2",
+	"version": "1.1.0",
 	"description": "html formatter yo! Prettify or minify html.",
 	"main": "./src/exports/index.js",
 	"scripts": {
+		"benchmark": "bun benchmarks/run.js",
+		"benchmark:compare": "bun benchmarks/compare.js",
 		"check": "tsc",
-		"test": "vitest"
+		"test": "vitest",
+		"test:run": "vitest run"
 	},
 	"exports": {
 		".": {
@@ -19,9 +22,11 @@
 		"types"
 	],
 	"devDependencies": {
+		"@types/node": "^20.0.0",
 		"typescript": "^5.0.0",
 		"vitest": "^2.1.2"
 	},
+	"packageManager": "bun@1.4.0",
 	"types": "types/index.d.ts",
 	"type": "module",
 	"repository": {

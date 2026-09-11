@@ -1,5 +1,4 @@
 import { VOID_ELEMENTS } from "./constants.js"
-import { getState } from "./state.js"
 import { isHtml } from "./utils.js"
 
 /**
@@ -13,9 +12,7 @@ import { isHtml } from "./utils.js"
  * @example <form /> => <form></form>
  */
 export const closify = (html) => {
-  const { checked_html } = getState()
-  
-  if (!checked_html && !isHtml(html)) return html
+  if (!isHtml(html)) return html
 
   return html.replace(/<([a-zA-Z\-0-9:]+)[^>]*>/g, (match, name) => {
     if (VOID_ELEMENTS.includes(name))

@@ -1,5 +1,110 @@
 import { CONFIG, VOID_ELEMENTS } from './constants.js'
-import { getState, setState } from './state.js'
+
+/**
+ * @typedef {object} HtmlfyConstants
+ * @property {string} CONTENT_IGNORE_PLACEHOLDER
+ * @property {string} SELF_CLOSING_PLACEHOLDER
+ * @property {string} ATTRIBUTE_IGNORE_PLACEHOLDER
+ */
+
+/**
+ * Create the placeholders used during one formatting operation.
+ *
+ * @param {string} [ignore_with]
+ * @returns {HtmlfyConstants}
+ */
+export const createConstants = (ignore_with = CONFIG.ignore_with) => ({
+  CONTENT_IGNORE_PLACEHOLDER: `${ignore_with}_`,
+  SELF_CLOSING_PLACEHOLDER: `${ignore_with}/_>`,
+  ATTRIBUTE_IGNORE_PLACEHOLDER: `${ignore_with}=_`
+})
+
+const DEFAULT_CONSTANTS = createConstants()
+
+/**
+ * Visit complete tags without treating brackets inside quoted attributes as boundaries.
+ * Returning true from the visitor stops the scan.
+ *
+ * @param {string} content
+ * @param {(tag: string, start: number, end: number) => boolean | void} visitor
+ * @returns {boolean}
+ */
+const scanTags = (content, visitor) => {
+  let tag_start = -1
+  let quote = ''
+
+  for (let index = 0; index < content.length; index++) {
+    const character = content[index]
+
+    if (tag_start === -1) {
+      if (character === '<') tag_start = index
+      continue
+    }
+
+    if (quote) {
+      if (character === quote) quote = ''
+      continue
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character
+    } else if (character === '<') {
+      tag_start = index
+    } else if (character === '>') {
+      if (visitor(content.slice(tag_start, index + 1), tag_start, index + 1)) return true
+      tag_start = -1
+    }
+  }
+
+  return false
+}
+
+/**
+ * Parse the name of an opening tag and return its end offset within the tag.
+ *
+ * @param {string} tag
+ * @returns {{ name: string, name_end: number } | undefined}
+ */
+const getOpeningTag = (tag) => {
+  let name_start = 1
+  while (/\s/.test(tag[name_start] || '')) name_start++
+  if (!/[A-Za-z]/.test(tag[name_start] || '')) return
+
+  let name_end = name_start + 1
+  while (name_end < tag.length && !/[\s/>]/.test(tag[name_end])) name_end++
+
+  const name = tag.slice(name_start, name_end)
+  if (!/^[A-Za-z][A-Za-z0-9:._-]*$/.test(name)) return
+
+  return { name, name_end }
+}
+
+/**
+ * Transform complete opening tags while preserving all content between them.
+ *
+ * @param {string} content
+ * @param {(tag: string, name: string, name_end: number) => string} transform
+ * @returns {string}
+ */
+export const transformOpeningTags = (content, transform) => {
+  const chunks = []
+  let previous_end = 0
+
+  scanTags(content, (tag, start, end) => {
+    const opening_tag = getOpeningTag(tag)
+    if (!opening_tag) return
+
+    chunks.push(
+      content.slice(previous_end, start),
+      transform(tag, opening_tag.name, opening_tag.name_end)
+    )
+    previous_end = end
+  })
+
+  if (chunks.length === 0) return content
+  chunks.push(content.slice(previous_end))
+  return chunks.join('')
+}
 
 /**
  * Checks if content contains at least one HTML element or custom HTML element.
@@ -24,11 +129,30 @@ import { getState, setState } from './state.js'
  * @returns {boolean} A boolean.
  */
 export const isHtml = (content) => {
-  setState({ checked_html: true })
+  const paired_elements = new Set()
+  const standard_element = /^[A-Za-z][A-Za-z0-9]*$/
+  const namespaced_element = /^(?:[A-Za-z][A-Za-z0-9]*:)[A-Za-z][A-Za-z0-9]*$/
+  const custom_element = /^(?:[a-z][a-z0-9._]*:)?[a-z][a-z0-9._]*-[a-z0-9._-]+$/
 
-  return /<(?:[A-Za-z]+[A-Za-z0-9]*)(?:\s+.*?)*?\/{0,1}>/.test(content) ||
-  /<(?<Element>(?:[A-Za-z]+[A-Za-z0-9]*:)?(?:[A-Za-z]+[A-Za-z0-9]*))(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content) || 
-  /<(?<Element>(?:[a-z][a-z0-9._]*:)?[a-z][a-z0-9._]*-[a-z0-9._-]+)(?:\s+.*?)*?>(?:.|\n)*?<\/{1}\k<Element>>/.test(content)
+  return scanTags(content, (tag) => {
+    if (tag.startsWith('</')) {
+      const name = tag.slice(2, -1)
+      return paired_elements.has(name)
+    }
+
+    const opening_tag = getOpeningTag(tag)
+    if (!opening_tag) return false
+
+    const suffix_start = tag[opening_tag.name_end]
+    if (!(suffix_start === '>' || /\s/.test(suffix_start) || (suffix_start === '/' && tag[opening_tag.name_end + 1] === '>')))
+      return false
+
+    if (standard_element.test(opening_tag.name)) return true
+    if (namespaced_element.test(opening_tag.name) || custom_element.test(opening_tag.name))
+      paired_elements.add(opening_tag.name)
+
+    return false
+  })
 }
 
 /**
@@ -72,27 +196,15 @@ const mergeObjects = (current, updates) => {
  * @returns {import('htmlfy').Config}
  */
 export const mergeConfig = (default_config, config) => {
-  const validated_config = mergeObjects(default_config, config)
-
-  /* Below `constants` prefixes and suffixes must be in sync with those in state.js */
-  setState({ 
-    config: validated_config,
-    constants: {
-      CONTENT_IGNORE_PLACEHOLDER: `${validated_config.ignore_with}_`,
-      SELF_CLOSING_PLACEHOLDER: `${validated_config.ignore_with}/_>`,
-      ATTRIBUTE_IGNORE_PLACEHOLDER: `${validated_config.ignore_with}=_`
-    }
-  })
-  return validated_config
+  return mergeObjects(default_config, config)
 }
 
 /**
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  */
-export const protectAttributes = (html) => {
-  const { constants } = getState()
-
+export const protectAttributes = (html, constants = DEFAULT_CONSTANTS) => {
   html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
     return match.replace(capture, (match) => {
       return match
@@ -107,11 +219,10 @@ export const protectAttributes = (html) => {
 
 /**
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  */
-export const protectContent = (html) => {
-  const { constants } = getState()
-
+export const protectContent = (html, constants = DEFAULT_CONSTANTS) => {
   return html
     .replace(/\n/g, constants.CONTENT_IGNORE_PLACEHOLDER + 'nl!')
     .replace(/\r/g, constants.CONTENT_IGNORE_PLACEHOLDER + 'cr!')
@@ -120,11 +231,11 @@ export const protectContent = (html) => {
 
 /**
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  */
-export const finalProtectContent = (html) => {
+export const finalProtectContent = (html, constants = DEFAULT_CONSTANTS) => {
   const regex = /\s*<([a-zA-Z0-9:-]+)[^>]*>\n\s*<\/\1>(?=\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n)(\n[ ]*\S[^\n]*\n)|<([a-zA-Z0-9:-]+)[^>]*>(?=\n[ ]*[^\n]*__!i-£___£%__[^\n]*\n)(\n[ ]*\S[^\n]*\n\s*)<\/\3>/g 
-  const { constants } = getState()
 
   return html
     .replace(regex, (/** @type {string} */match, p1, p2, p3, p4) => {
@@ -145,22 +256,39 @@ export const finalProtectContent = (html) => {
 /**
  * Replace html brackets with ignore string.
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  * @returns {string}
  */
-export const setIgnoreAttribute = (html) => {
-  const regex = /<([A-Za-z][A-Za-z0-9]*|[a-z][a-z0-9._]*-[a-z0-9._-]+)((?:\s+[A-Za-z0-9_-]+="[^"]*"|\s*[a-z]*)*)>/g 
-  const { constants } = getState()
+export const setIgnoreAttribute = (html, constants = DEFAULT_CONSTANTS) => {
+  // Most documents do not contain HTML-like brackets inside attribute values.
+  if (!/=\s*(?:"[^"]*[<>][^"]*"|'[^']*[<>][^']*')/.test(html)) return html
 
-  html = html.replace(regex, (/** @type {string} */match, p1, p2) => {
-    return match.replace(p2, (match) => {
-      return match
-        .replace(/</g, constants.ATTRIBUTE_IGNORE_PLACEHOLDER + 'lt!')
-        .replace(/>/g, constants.ATTRIBUTE_IGNORE_PLACEHOLDER + 'gt!')
-    })
+  return transformOpeningTags(html, (tag, name, name_end) => {
+    let quote = ''
+    let previous_end = 0
+    const chunks = []
+
+    for (let index = name_end; index < tag.length - 1; index++) {
+      const character = tag[index]
+
+      if (!quote && (character === '"' || character === "'")) {
+        quote = character
+      } else if (quote && character === quote) {
+        quote = ''
+      } else if (quote && (character === '<' || character === '>')) {
+        chunks.push(
+          tag.slice(previous_end, index),
+          constants.ATTRIBUTE_IGNORE_PLACEHOLDER + (character === '<' ? 'lt!' : 'gt!')
+        )
+        previous_end = index + 1
+      }
+    }
+
+    if (chunks.length === 0) return tag
+    chunks.push(tag.slice(previous_end))
+    return chunks.join('')
   })
-  
-  return html
 }
 
 /**
@@ -186,11 +314,10 @@ export const trimify = (html, trim) => {
 
 /**
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  */
-export const unprotectAttributes = (html) => {
-  const { constants } = getState()
-
+export const unprotectAttributes = (html, constants = DEFAULT_CONSTANTS) => {
   html = html.replace(/<[\w:\-]+([^>]*[^\/])>/g, (/** @type {string} */match, /** @type {any} */capture) => {
     return match.replace(capture, (match) => {
       return match
@@ -205,11 +332,10 @@ export const unprotectAttributes = (html) => {
 
 /**
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  */
-export const unprotectContent = (html) => {
-  const { constants } = getState()
-
+export const unprotectContent = (html, constants = DEFAULT_CONSTANTS) => {
   html = html.replace(new RegExp(`.*${constants.CONTENT_IGNORE_PLACEHOLDER}[a-z]{2}!.*`, "g"), (/** @type {string} */match) => {
     return match.replace(new RegExp(`${constants.CONTENT_IGNORE_PLACEHOLDER}[a-z]{2}!`, "g"), (match) => {
       return match
@@ -225,13 +351,13 @@ export const unprotectContent = (html) => {
 /**
  * Replace ignore string with html brackets.
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  * @returns {string}
  */
-export const unsetIgnoreAttribute = (html) => {
+export const unsetIgnoreAttribute = (html, constants = DEFAULT_CONSTANTS) => {
   /* Regex to find opening tags and capture their attributes. */
   const tagRegex = /<([\w:\-]+)([^>]*)>/g
-  const { constants } = getState()
   const escapedIgnoreString = constants.ATTRIBUTE_IGNORE_PLACEHOLDER.replace(
     /[-\/\\^$*+?.()|[\]{}]/g,
     "\\$&"
@@ -264,6 +390,8 @@ export const unsetIgnoreAttribute = (html) => {
  */
 export const validateConfig = (config) => {
   if (typeof config !== 'object') throw new Error('Config must be an object.')
+
+  config = { ...config }
   
   const default_config = { ...CONFIG }
 
@@ -278,7 +406,6 @@ export const validateConfig = (config) => {
   )
 
   if (config_empty) {
-    setState({ config: default_config })
     return default_config
   }
 
@@ -336,113 +463,165 @@ export const validateConfig = (config) => {
  * @param {string} text 
  * @param {number} width 
  * @param {string} indent
+ * @param {HtmlfyConstants} [constants]
  */
-export const wordWrap = (text, width, indent) => {
+export const wordWrap = (text, width, indent, constants = DEFAULT_CONSTANTS) => {
   const words = text.trim().split(/\s+/)
   
   if (words.length === 0 || (words.length === 1 && words[0] === ''))
     return ""
 
+  /** @type {string[]} */
   const lines = []
-  let current_line = ""
-  const padding_string = indent
+  /** @type {string[]} */
+  const current_words = []
+  let current_length = 0
 
-  words.forEach((word) => {
-    if (word === "") return
+  const flushLine = () => {
+    if (current_words.length === 0) return
+    lines.push(indent + current_words.join(' '))
+    current_words.length = 0
+    current_length = 0
+  }
+
+  for (const word of words) {
+    if (word === "") continue
 
     if (word.length >= width) {
-      /* If there's content on the current line, push it first with correct padding. */
-      if (current_line !== "")
-        lines.push(lines.length === 0 ? indent + current_line : padding_string + current_line)
-
-      /* Push a long word on its own line with correct padding. */
-      lines.push(lines.length === 0 ? indent + word : padding_string + word)
-      current_line = "" // Reset current line
-      return // Move to the next word
+      flushLine()
+      lines.push(indent + word)
+      continue
     }
 
-    /* Check if adding the next word exceeds the wrap width. */
-    const test_line = current_line === "" ? word : current_line + " " + word
-
-    if (test_line.length <= width) {
-      current_line = test_line
+    const next_length = current_length + (current_words.length === 0 ? 0 : 1) + word.length
+    if (next_length <= width) {
+      current_words.push(word)
+      current_length = next_length
     } else {
-      /* Word doesn't fit, finish the current line and push it. */
-      if (current_line !== "") {
-         /* Add padding based on whether it's the first line added or not. */
-         lines.push(lines.length === 0 ? indent + current_line : padding_string + current_line)
-      }
-      /* Start a new line with the current word. */
-      current_line = word
+      flushLine()
+      current_words.push(word)
+      current_length = word.length
     }
-  })
+  }
 
-  /* Add the last remaining line with appropriate padding. */
-  if (current_line !== "")
-    lines.push(lines.length === 0 ? indent + current_line : padding_string + current_line)
+  flushLine()
 
   const result = lines.join("\n")
 
-  return protectContent(result)
+  return protectContent(result, constants)
+}
+
+const IGNORE_MARKER_PREFIX = "___HTMLFY_SPECIAL_IGNORE_MARKER_"
+const IGNORE_MARKER_REGEX = /___HTMLFY_SPECIAL_IGNORE_MARKER_\d+___/g
+const TEXTAREA_MARKER_PREFIX = "___HTMLFY_TEXTAREA_MARKER_"
+const TEXTAREA_MARKER_REGEX = /___HTMLFY_TEXTAREA_MARKER_\d+___/g
+
+/**
+ * Extract the contents of matching elements in one traversal.
+ *
+ * @param {string} html
+ * @param {Set<string>} names
+ * @param {string} marker_prefix
+ * @param {(content: string) => string} [transform]
+ * @returns {{ html_with_markers: string, extracted_map: Map<string,string> }}
+ */
+const extractBlocks = (html, names, marker_prefix, transform = content => content) => {
+  const extracted_blocks = new Map()
+  const chunks = []
+  let marker_id = 0
+  let previous_end = 0
+
+  /** @type {{ name: string, content_start: number } | undefined} */
+  let active_block
+  let tag_start = -1
+  let quote = ''
+
+  for (let index = 0; index < html.length; index++) {
+    const character = html[index]
+
+    if (active_block) {
+      if (character !== '<') continue
+
+      let closing_index = index + 1
+      while (/\s/.test(html[closing_index] || '')) closing_index++
+      if (html[closing_index] !== '/') continue
+
+      closing_index++
+      while (/\s/.test(html[closing_index] || '')) closing_index++
+      if (!html.startsWith(active_block.name, closing_index)) continue
+
+      closing_index += active_block.name.length
+      while (/\s/.test(html[closing_index] || '')) closing_index++
+      if (html[closing_index] !== '>') continue
+
+      const marker = `${marker_prefix}${marker_id++}___`
+      chunks.push(html.slice(previous_end, active_block.content_start), marker)
+      extracted_blocks.set(marker, transform(html.slice(active_block.content_start, index)))
+      previous_end = index
+      active_block = undefined
+      index = closing_index
+      continue
+    }
+
+    if (tag_start === -1) {
+      if (character === '<') tag_start = index
+      continue
+    }
+
+    if (quote) {
+      if (character === quote) quote = ''
+      continue
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character
+    } else if (character === '<') {
+      tag_start = index
+    } else if (character === '>') {
+      const opening_tag = getOpeningTag(html.slice(tag_start, index + 1))
+      if (opening_tag && names.has(opening_tag.name)) {
+        active_block = { name: opening_tag.name, content_start: index + 1 }
+      }
+      tag_start = -1
+    }
+  }
+
+  if (extracted_blocks.size === 0)
+    return { html_with_markers: html, extracted_map: extracted_blocks }
+
+  chunks.push(html.slice(previous_end))
+  return { html_with_markers: chunks.join(''), extracted_map: extracted_blocks }
 }
 
 /**
  * Extract any HTML blocks to be ignored,
- * and replace them with a placeholder
- * for re-insertion later.
- * 
- * @param {string} html 
- * @returns {{ html_with_markers: string, extracted_map: Map<any,any> }}
+ * and replace them with a placeholder for re-insertion later.
+ *
+ * @param {string} html
+ * @param {string[]} ignore
+ * @returns {{ html_with_markers: string, extracted_map: Map<string,string> }}
  */
-export function extractIgnoredBlocks(html) {
-  setState({ ignored: true })
-  const config = (getState()).config
-  let current_html = html
-  const extracted_blocks = new Map()
-  let marker_id = 0
-  const MARKER_PREFIX = "___HTMLFY_SPECIAL_IGNORE_MARKER_"
+export function extractIgnoredBlocks(html, ignore) {
+  return extractBlocks(html, new Set(ignore), IGNORE_MARKER_PREFIX)
+}
 
-  for (const tag of config.ignore) {
-    /* Ensure tag is escaped if it can contain regex special chars. */
-    const safe_tag_name = tag.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")
-
-    const regex = new RegExp(
-      `(<\\s*${safe_tag_name}[^>]*>)(.*?)(<\\s*\/\\s*${safe_tag_name}\\s*>)`,
-      "gs" // global and dotAll
-    )
-
-    /** @type RegExpExecArray | null */
-    let match
-
-    /**
-     * @type {{ start: number; end: number; marker: string }[]}
-     */
-    const replacements = []
-
-    while ((match = regex.exec(current_html)) !== null) {
-      const marker = `${MARKER_PREFIX}${marker_id++}___`
-
-      /* Only store content, and minify tags later. */
-      extracted_blocks.set(marker, match[2])
-      
-      replacements.push({
-        start: match.index + match[1].length, // start of content
-        end: match.index + match[1].length + match[2].length, // end of content
-        marker: marker,
-      })
-    }
-
-    /* Apply replacements from the end to the beginning to keep indices valid. */
-    for (let i = replacements.length - 1; i >= 0; i--) {
-      const rep = replacements[i]
-      current_html =
-        current_html.substring(0, rep.start) +
-        rep.marker +
-        current_html.substring(rep.end)
-    }
-  }
-
-  return { html_with_markers: current_html, extracted_map: extracted_blocks }
+/**
+ * Protect textarea contents without expanding them into entities.
+ *
+ * @param {string} html
+ * @returns {{ html_with_markers: string, extracted_map: Map<string,string> }}
+ */
+export function extractTextareaBlocks(html) {
+  return extractBlocks(html, new Set(['textarea']), TEXTAREA_MARKER_PREFIX, content => content
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#10;/g, '\n')
+    .replace(/&#13;/g, '\r')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+  )
 }
 
 /**
@@ -453,13 +632,18 @@ export function extractIgnoredBlocks(html) {
  * @returns 
  */
 export function reinsertIgnoredBlocks(html_with_markers, extracted_map) {
-  setState({ ignored: false })
-  let final_html = html_with_markers
+  return html_with_markers.replace(IGNORE_MARKER_REGEX, marker => extracted_map.get(marker) ?? marker)
+}
 
-  for (const [marker, original_block] of extracted_map) {
-    final_html = final_html.split(marker).join(original_block)
-  }
-  return final_html
+/**
+ * Re-insert protected textarea contents in one pass.
+ *
+ * @param {string} html_with_markers
+ * @param {Map<string,string>} extracted_map
+ * @returns {string}
+ */
+export function reinsertTextareaBlocks(html_with_markers, extracted_map) {
+  return html_with_markers.replace(TEXTAREA_MARKER_REGEX, marker => extracted_map.get(marker) ?? marker)
 }
 
 const void_element_regex = new RegExp(`<(${VOID_ELEMENTS.join("|")})(?:\\s(?:[^/>]|/(?!>))*)*>`, 'g')
@@ -468,12 +652,11 @@ const void_element_regex = new RegExp(`<(${VOID_ELEMENTS.join("|")})(?:\\s(?:[^/
  * Add a placeholder for void elements that are not self-closing.
  * This is for internal processing only.
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  * @returns 
  */
-export function setSelfClosing(html) {
-  const { constants } = getState()
-
+export function setSelfClosing(html, constants = DEFAULT_CONSTANTS) {
   return html.replace(
     // match only void elements that are not self-closing
     void_element_regex,
@@ -484,11 +667,10 @@ export function setSelfClosing(html) {
 /**
  * Remove internal placeholder for non-native self-closing void elements.
  * 
- * @param {string} html 
+ * @param {string} html
+ * @param {HtmlfyConstants} [constants]
  * @returns 
  */
-export function unsetSelfClosing(html) {
-  const { constants } = getState()
-
+export function unsetSelfClosing(html, constants = DEFAULT_CONSTANTS) {
   return html.replace(constants.SELF_CLOSING_PLACEHOLDER, ">")
 }
