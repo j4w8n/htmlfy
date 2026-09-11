@@ -38,6 +38,27 @@ test('Attribute protection preserves quoted HTML', () => {
   expect(unsetIgnoreAttribute(setIgnoreAttribute(html))).toBe(html)
 })
 
+test('Prettify preserves token classification and wrapping behavior', () => {
+  const html = '<!doctype html><main><!-- note --><input type="text" aria-label="A label" data-long="1234567890"><p>one two three four five six seven eight nine ten</p></main>'
+
+  expect(prettify(html, { tag_wrap: 30, content_wrap: 12 })).toBe(`<!doctype html>
+<main>
+  <!-- note -->
+  <input
+    type="text"
+    aria-label="A label"
+    data-long="1234567890"
+  >
+  <p>
+    one two
+    three four
+    five six
+    seven eight
+    nine ten
+  </p>
+</main>`)
+})
+
 test('Prettify preserves many ignored blocks', () => {
   const block = '<pre>  const value = "a  b";\n    console.log(value);\n</pre>'
   const html = `<main>${block.repeat(25)}</main>`

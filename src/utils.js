@@ -471,43 +471,40 @@ export const wordWrap = (text, width, indent, constants = DEFAULT_CONSTANTS) => 
   if (words.length === 0 || (words.length === 1 && words[0] === ''))
     return ""
 
+  /** @type {string[]} */
   const lines = []
-  let current_line = ""
-  const padding_string = indent
+  /** @type {string[]} */
+  const current_words = []
+  let current_length = 0
 
-  words.forEach((word) => {
-    if (word === "") return
+  const flushLine = () => {
+    if (current_words.length === 0) return
+    lines.push(indent + current_words.join(' '))
+    current_words.length = 0
+    current_length = 0
+  }
+
+  for (const word of words) {
+    if (word === "") continue
 
     if (word.length >= width) {
-      /* If there's content on the current line, push it first with correct padding. */
-      if (current_line !== "")
-        lines.push(lines.length === 0 ? indent + current_line : padding_string + current_line)
-
-      /* Push a long word on its own line with correct padding. */
-      lines.push(lines.length === 0 ? indent + word : padding_string + word)
-      current_line = "" // Reset current line
-      return // Move to the next word
+      flushLine()
+      lines.push(indent + word)
+      continue
     }
 
-    /* Check if adding the next word exceeds the wrap width. */
-    const test_line = current_line === "" ? word : current_line + " " + word
-
-    if (test_line.length <= width) {
-      current_line = test_line
+    const next_length = current_length + (current_words.length === 0 ? 0 : 1) + word.length
+    if (next_length <= width) {
+      current_words.push(word)
+      current_length = next_length
     } else {
-      /* Word doesn't fit, finish the current line and push it. */
-      if (current_line !== "") {
-         /* Add padding based on whether it's the first line added or not. */
-         lines.push(lines.length === 0 ? indent + current_line : padding_string + current_line)
-      }
-      /* Start a new line with the current word. */
-      current_line = word
+      flushLine()
+      current_words.push(word)
+      current_length = word.length
     }
-  })
+  }
 
-  /* Add the last remaining line with appropriate padding. */
-  if (current_line !== "")
-    lines.push(lines.length === 0 ? indent + current_line : padding_string + current_line)
+  flushLine()
 
   const result = lines.join("\n")
 

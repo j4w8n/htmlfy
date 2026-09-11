@@ -8,7 +8,6 @@ import {
   reinsertIgnoredBlocks, 
   setIgnoreAttribute, 
   setSelfClosing, 
-  unsetSelfClosing, 
   trimify, 
   unprotectAttributes, 
   unprotectContent, 
@@ -18,33 +17,64 @@ import {
 } from './utils.js'
 import { VOID_ELEMENTS } from './constants.js'
 
+const VOID_ELEMENT_SET = new Set(VOID_ELEMENTS)
+const TOKEN_CLOSING = 1
+const TOKEN_COMMENT = 2
+const TOKEN_DOCTYPE = 4
+const TOKEN_IGNORED = 8
+const TOKEN_SELF_CLOSING = 16
+const TOKEN_SYNTHETIC_SELF_CLOSING = 32
+
+/**
+ * @typedef {object} Token
+ * @property {'tag' | 'text'} type
+ * @property {string} value
+ * @property {number} flags
+ */
+
 /**
  * Isolate tags, content, and comments.
  * 
  * @param {string} html The HTML string to evaluate.
- * @example <div>Hello World!</div> => 
- *  [#-# : 0 : <div> : #-#]
- *  Hello World!
- *  [#-# : 1 : </div> : #-#]
- * @returns {Record<string,string>[]}
+ * @param {import('./utils.js').HtmlfyConstants} constants
+ * @returns {Token[]}
  */
-const enqueue = (html) => {
-  /** @type {Record<string,string>[]} */
+const enqueue = (html, constants) => {
+  /** @type {Token[]} */
   const lines = []
-  let i = -1
   /* Regex to find tags OR text content between tags. */
-  const regex = /(<[^>]+>)|([^<]+)/g
+  const regex = /<[^>]+>|[^<]+/g
 
-  html.replace(regex, (match, c1, c2) => {
-    if (c1) {
-      lines.push({ type: "tag", value: match })
-    } else if (c2 && c2.trim().length > 0) {
-      /* It's text content (and not just whitespace). */
-      lines.push({ type: "text", value: match })
+  /* Use replace for callback iteration, but avoid constructing the old marker output. */
+  html.replace(regex, (value) => {
+    const type = value.startsWith('<') ? 'tag' : 'text'
+
+    if (type === 'text') {
+      if (value.trim().length > 0) {
+        lines.push({
+          type,
+          value,
+          flags: value.startsWith('___HTMLFY_SPECIAL_IGNORE_MARKER_') ? TOKEN_IGNORED : 0,
+        })
+      }
+      return ''
     }
 
-    i++
-    return `\n[#-# : ${i} : ${match} : #-#]\n`
+    const trimmed = value.trim()
+    const synthetic_self_closing = trimmed.endsWith(constants.SELF_CLOSING_PLACEHOLDER)
+    let flags = 0
+    if (trimmed.startsWith('</')) flags |= TOKEN_CLOSING
+    if (trimmed.startsWith('<!--')) flags |= TOKEN_COMMENT
+    if (trimmed.startsWith('<!doctype')) flags |= TOKEN_DOCTYPE
+    if (trimmed.endsWith('/>') || synthetic_self_closing) flags |= TOKEN_SELF_CLOSING
+    if (synthetic_self_closing) flags |= TOKEN_SYNTHETIC_SELF_CLOSING
+
+    lines.push({
+      type,
+      value,
+      flags,
+    })
+    return ''
   })
 
   return lines
@@ -53,7 +83,7 @@ const enqueue = (html) => {
 /**
  * Process enqueued content.
  *  
- * @param {Record<string,string>[]} lines
+ * @param {Token[]} lines
  * @param {import('htmlfy').Config} config
  * @param {import('./utils.js').HtmlfyConstants} constants
  * @returns {string}
@@ -65,53 +95,42 @@ const process = (lines, config, constants) => {
   const strict = config.strict
 
   /* Track current number of indentations needed. */
-  let indents = ''
+  let indent_level = 0
 
   /** @type string[] */
   const output_lines = []
-  const tag_regex = /<[A-Za-z]+\b[^>]*(?:.|\n)*?\/?>/g /* Is opening tag or void element. */
+  const tag_regex = /<[A-Za-z]+\b[^>]*(?:.|\n)*?\/?>/ /* Is opening tag or void element. */
   const attribute_regex = /\s{1}[A-Za-z:@#*?$()\[\].-]+(?:=".*?")?/g /* Matches all tag/element attributes. */
 
   /* Process lines and indent. */
   lines.forEach((source, index) => {
     let current_line_value = source.value
 
-    const is_ignored_content =
-      current_line_value.startsWith('___HTMLFY_SPECIAL_IGNORE_MARKER_')
-
     let subtrahend = 0
     const prev_line_data = lines[index - 1]
-    const prev_line_value = prev_line_data?.value ?? "" // Use empty string if no prev line
 
-    /**
-     * Arbitratry character, to keep track of the string's length.
-     */
-    indents += '0'
+    indent_level++
 
     if (index === 0) subtrahend++
     /* We're processing a closing tag. */
-    if (current_line_value.trim().startsWith("</")) subtrahend++
+    if (source.flags & TOKEN_CLOSING) subtrahend++
     /* prevLine is a doctype declaration. */
-    if (prev_line_value.trim().startsWith("<!doctype")) subtrahend++
+    if (prev_line_data && (prev_line_data.flags & TOKEN_DOCTYPE)) subtrahend++
     /* prevLine is a comment. */
-    if (prev_line_value.trim().startsWith("<!--")) subtrahend++
+    if (prev_line_data && (prev_line_data.flags & TOKEN_COMMENT)) subtrahend++
     /* prevLine is a void element. */
-    if (
-      prev_line_value.trim().endsWith("/>") // native self-closing
-      ||
-      prev_line_value.trim().endsWith(constants.SELF_CLOSING_PLACEHOLDER) // synthetic self-closing
-    ) subtrahend++
+    if (prev_line_data && (prev_line_data.flags & TOKEN_SELF_CLOSING)) subtrahend++
     /* prevLine is a closing tag. */
-    if (prev_line_value.trim().startsWith("</")) subtrahend++
+    if (prev_line_data && (prev_line_data.flags & TOKEN_CLOSING)) subtrahend++
     /* prevLine is text. */
     if (prev_line_data?.type === "text") subtrahend++
 
     /* Determine offset for line indentation. */
-    const offset = Math.max(0, indents.length - subtrahend)
+    const offset = Math.max(0, indent_level - subtrahend)
     /* Correct indent level for *this* line's content */
     const current_indent_level = offset // Store the level for this line
 
-    indents = indents.substring(0, current_indent_level) // Adjust for *next* round
+    indent_level = current_indent_level
 
     /**
      * Starts with a single punctuation character.
@@ -134,18 +153,19 @@ const process = (lines, config, constants) => {
 
     const padding = step.repeat(current_indent_level)
 
-    if (is_ignored_content) {
+    if (source.flags & TOKEN_IGNORED) {
       /* Stop processing this line, as it's set to be ignored. */
       output_lines.push(current_line_value)
     } else {
       /* Remove comment. */
-      if (strict && current_line_value.trim().startsWith("<!--"))
+      if (strict && (source.flags & TOKEN_COMMENT))
         return
 
       let result = current_line_value
 
       /* Remove self-closing placeholder, if needed. */
-      result = unsetSelfClosing(result, constants)
+      if (source.flags & TOKEN_SYNTHETIC_SELF_CLOSING)
+        result = result.replace(constants.SELF_CLOSING_PLACEHOLDER, '>')
 
       if (
         source.type === 'text' && 
@@ -160,30 +180,36 @@ const process = (lines, config, constants) => {
         result.length > tag_wrap &&
         tag_regex.test(result)
       ) {
-        tag_regex.lastIndex = 0 // Reset stateful regex
         attribute_regex.lastIndex = 0 // Reset stateful regex
 
-        const tag_parts = result.split(attribute_regex).filter(Boolean)
+        const attributes = []
+        let first_attribute_start = -1
+        let last_attribute_end = -1
+        let attribute_match
 
-        if (tag_parts.length >= 2) {
-          const attributes = result.matchAll(attribute_regex)
+        while ((attribute_match = attribute_regex.exec(result)) !== null) {
+          if (first_attribute_start === -1) first_attribute_start = attribute_match.index
+          last_attribute_end = attribute_regex.lastIndex
+          attributes.push(attribute_match[0].trim())
+        }
+
+        if (attributes.length > 0) {
+          const opening_part = result.slice(0, first_attribute_start)
+          const closing_part = result.slice(last_attribute_end).trim()
           const inner_padding = padding + step
-          let wrapped_tag = padding + tag_parts[0] + "\n"
+          const wrapped_tag = [padding + opening_part]
 
-          for (const a of attributes) {
-            const attribute_string = a[0].trim()
-            wrapped_tag += inner_padding + attribute_string + "\n"
+          for (const attribute of attributes) {
+            wrapped_tag.push(inner_padding + attribute)
           }
 
-          const tag_name_match = tag_parts[0].match(/<([A-Za-z_:-]+)/)
+          const tag_name_match = opening_part.match(/<([A-Za-z_:-]+)/)
           const tag_name = tag_name_match ? tag_name_match[1] : ""
-          const is_self_closing = tag_parts.at(-1)?.endsWith("/>") && VOID_ELEMENTS.includes(tag_name)
-          const closing_part = tag_parts[1].trim()
+          const is_self_closing = result.endsWith("/>") && VOID_ELEMENT_SET.has(tag_name)
           const closing_padding = padding + (strict && is_self_closing ? " " : "")
 
-          wrapped_tag += closing_padding + closing_part
-
-          result = wrapped_tag // Assign the fully wrapped string
+          wrapped_tag.push(closing_padding + closing_part)
+          result = wrapped_tag.join('\n')
         } else {
           result = padding + result
         }
@@ -272,7 +298,7 @@ export const prettify = (html, config) => {
   html = setSelfClosing(html, constants)
 
   html = minifyKnownHtml(html, validated_config)
-  const lines = enqueue(html)
+  const lines = enqueue(html, constants)
   html = process(lines, validated_config, constants)
 
   /* Revert html text within attribute values. */
